@@ -37,9 +37,9 @@ else
 fi
 
 if [ -z "$5" ]; then
-    MAX_NTHREADS=1
+    MAX_NTHREADS=8
 else
-    MAX_NTHREADS=1
+    MAX_NTHREADS=$5
 fi
 RSEED=$((JOBINDEX * MAX_NTHREADS * 4 + 1001 + $RANDOM)) # Space out seeds; Madgraph concurrent mode adds idx(thread) to random seed. The extra *4 is a paranoia factor.
 
