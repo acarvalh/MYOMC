@@ -1,0 +1,6 @@
+<tool name="py3-jupyter-client" version="8.6.1-bc7aed8a31f4b5b8ddb0e39ca888a675" revision="1">
+  <client>
+    <environment name="PY3_JUPYTER_CLIENT_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-jupyter-client/8.6.1-bc7aed8a31f4b5b8ddb0e39ca888a675"/>
+  </client>
+  <runtime name="PATH" value="$PY3_JUPYTER_CLIENT_BASE/bin" type="path"/>
+</tool>

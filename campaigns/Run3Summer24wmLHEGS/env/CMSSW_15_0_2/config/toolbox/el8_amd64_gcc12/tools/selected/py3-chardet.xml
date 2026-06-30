@@ -1,0 +1,6 @@
+<tool name="py3-chardet" version="5.2.0-fba58f522cd3eb22832099ae50c83c04" revision="1">
+  <client>
+    <environment name="PY3_CHARDET_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-chardet/5.2.0-fba58f522cd3eb22832099ae50c83c04"/>
+  </client>
+  <runtime name="PATH" value="$PY3_CHARDET_BASE/bin" type="path"/>
+</tool>

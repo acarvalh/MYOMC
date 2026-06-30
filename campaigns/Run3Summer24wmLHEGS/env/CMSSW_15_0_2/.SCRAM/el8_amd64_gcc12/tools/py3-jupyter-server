@@ -1,0 +1,14 @@
+{
+  "PY3_JUPYTER_SERVER_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-jupyter-server/2.14.0-fd87e08d284130a8e00176f74777718c",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-jupyter-server/2.14.0-fd87e08d284130a8e00176f74777718c/bin"
+    ]
+  },
+  "TOOLNAME": "py3-jupyter-server",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "2.14.0-fd87e08d284130a8e00176f74777718c",
+  "VARIABLES": [
+    "PY3_JUPYTER_SERVER_BASE"
+  ]
+}

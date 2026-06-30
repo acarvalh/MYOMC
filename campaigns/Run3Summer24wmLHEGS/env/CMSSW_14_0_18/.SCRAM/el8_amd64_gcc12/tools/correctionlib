@@ -1,0 +1,28 @@
+{
+  "BINDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-correctionlib/2.2.2-bbee3c20c94f866204fe7c033971e0f7/bin"
+  ],
+  "CORRECTIONLIB_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-correctionlib/2.2.2-bbee3c20c94f866204fe7c033971e0f7",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-correctionlib/2.2.2-bbee3c20c94f866204fe7c033971e0f7/lib/python3.9/site-packages/correctionlib/include"
+  ],
+  "LIB": [
+    "correctionlib"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-correctionlib/2.2.2-bbee3c20c94f866204fe7c033971e0f7/lib/python3.9/site-packages/correctionlib/lib"
+  ],
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-correctionlib/2.2.2-bbee3c20c94f866204fe7c033971e0f7/bin"
+    ]
+  },
+  "TOOLNAME": "correctionlib",
+  "TOOLVERSION": "2.2.2-bbee3c20c94f866204fe7c033971e0f7",
+  "VARIABLES": [
+    "CORRECTIONLIB_BASE",
+    "INCLUDE",
+    "LIBDIR",
+    "BINDIR"
+  ]
+}

@@ -1,0 +1,11 @@
+<tool name="geant4vis" version="11.2.2-2874e23607698d953f66cc1f6e4baad9" revision="1">
+  <lib name="G4FR"/>
+  <lib name="G4modeling"/>
+  <lib name="G4RayTracer"/>
+  <lib name="G4Tree"/>
+  <lib name="G4visHepRep"/>
+  <lib name="G4vis_management"/>
+  <lib name="G4VRML"/>
+  <lib name="G4GMocren"/>
+  <use name="geant4core"/>
+</tool>

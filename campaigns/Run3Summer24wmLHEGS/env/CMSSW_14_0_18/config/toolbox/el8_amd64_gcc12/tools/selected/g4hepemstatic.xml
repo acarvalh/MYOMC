@@ -1,0 +1,8 @@
+<tool name="g4hepemstatic" version="20230309-c2931c935ab32e8d3e858fcb9a3499b8">
+  <lib name="g4hepem-static"/>
+  <client>
+    <environment name="G4HEPEMSTATIC_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/g4hepem/20230309-c2931c935ab32e8d3e858fcb9a3499b8"/>
+    <environment name="LIBDIR" default="$G4HEPEMSTATIC_BASE/lib64/archive"/>
+  </client>
+  <use name="g4hepem_interface"/>
+</tool>

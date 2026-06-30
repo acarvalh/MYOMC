@@ -1,0 +1,22 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pytorch/2.4.0-6449ad4fb456b3cd15dacc73581b016d/include",
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pytorch/2.4.0-6449ad4fb456b3cd15dacc73581b016d/include/torch/csrc/api/include"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pytorch/2.4.0-6449ad4fb456b3cd15dacc73581b016d/lib"
+  ],
+  "TOOLNAME": "torch-interface",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "2.4.0-6449ad4fb456b3cd15dacc73581b016d",
+  "TORCH_INTERFACE_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pytorch/2.4.0-6449ad4fb456b3cd15dacc73581b016d",
+  "USE": [
+    "protobuf",
+    "zlib"
+  ],
+  "VARIABLES": [
+    "TORCH_INTERFACE_BASE",
+    "INCLUDE",
+    "LIBDIR"
+  ]
+}

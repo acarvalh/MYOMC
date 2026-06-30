@@ -1,0 +1,19 @@
+{
+  "CC": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef/bin/clang",
+  "FLAGS": {
+    "CFLAGS": [
+      "--gcc-toolchain=/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28"
+    ]
+  },
+  "LLVM_CCOMPILER_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef",
+  "SCRAM_COMPILER": 1,
+  "TOOLNAME": "llvm-ccompiler",
+  "TOOLVERSION": "17.0.3-58617194c079c8f35fd2aa0eeb9674ef",
+  "USE": [
+    "gcc-ccompiler"
+  ],
+  "VARIABLES": [
+    "LLVM_CCOMPILER_BASE",
+    "CC"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cuda/12.2.1-bdf3fff69eaec65abe18a7569592cab6/include"
+  ],
+  "LIB": [
+    "nvperf_host",
+    "nvperf_target"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cuda/12.2.1-bdf3fff69eaec65abe18a7569592cab6/lib64"
+  ],
+  "NVPERF_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cuda/12.2.1-bdf3fff69eaec65abe18a7569592cab6",
+  "TOOLNAME": "nvperf",
+  "TOOLVERSION": "12.2.1-bdf3fff69eaec65abe18a7569592cab6",
+  "VARIABLES": [
+    "NVPERF_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

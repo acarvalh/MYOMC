@@ -1,0 +1,5 @@
+<tool name="dd4hep-geant4" version="v01-27-02-141b4bb9a35f04be2d5252ae0ee15915">
+  <lib name="DDG4-static"/>
+  <use name="geant4core"/>
+  <use name="dd4hep-core"/>
+</tool>

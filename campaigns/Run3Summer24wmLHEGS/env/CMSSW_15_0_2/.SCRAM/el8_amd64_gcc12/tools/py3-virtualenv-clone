@@ -1,0 +1,14 @@
+{
+  "PY3_VIRTUALENV_CLONE_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-virtualenv-clone/0.5.7-80c4241082ccc0072ebe977002dc78eb",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-virtualenv-clone/0.5.7-80c4241082ccc0072ebe977002dc78eb/bin"
+    ]
+  },
+  "TOOLNAME": "py3-virtualenv-clone",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "0.5.7-80c4241082ccc0072ebe977002dc78eb",
+  "VARIABLES": [
+    "PY3_VIRTUALENV_CLONE_BASE"
+  ]
+}

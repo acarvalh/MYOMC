@@ -1,0 +1,9 @@
+<tool name="hls4mlemulatorextras" version="1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40">
+  <lib name="emulator_interface"/>
+  <use name="sockets"/>
+  <client>
+    <environment name="HLS4MLEMULATOREXTRAS_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hls4mlEmulatorExtras/1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40"/>
+    <environment name="INCLUDE"      default="$HLS4MLEMULATOREXTRAS_BASE/include"/>
+    <environment name="LIBDIR"       default="$HLS4MLEMULATOREXTRAS_BASE/lib64"/>
+  </client>
+</tool>

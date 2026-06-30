@@ -1,0 +1,6 @@
+<tool name="pytorch" version="2.1.1-c4bf74c288414b56635b988d4fa55bf1">
+  <lib name="torch"/>
+  <lib name="torch_cpu"/>
+  <lib name="c10"/>
+  <use name="torch-interface"/>
+</tool>

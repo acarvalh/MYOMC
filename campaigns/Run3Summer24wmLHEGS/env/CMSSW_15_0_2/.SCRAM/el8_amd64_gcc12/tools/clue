@@ -1,0 +1,16 @@
+{
+  "CLUE_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clue/1.0.0-2d104432920a0bfe71c465eb14232cfd",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clue/1.0.0-2d104432920a0bfe71c465eb14232cfd/include"
+  ],
+  "TOOLNAME": "clue",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.0.0-2d104432920a0bfe71c465eb14232cfd",
+  "USE": [
+    "alpaka"
+  ],
+  "VARIABLES": [
+    "CLUE_BASE",
+    "INCLUDE"
+  ]
+}

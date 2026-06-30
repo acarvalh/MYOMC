@@ -1,0 +1,35 @@
+{
+  "FLAGS": {
+    "CXXFLAGS": [
+      "-DCMS_TK_64BITS"
+    ]
+  },
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tkonlinesw/4.2.0-1_gcc7-b3a7186cfc89e64130729fa95235a07e/include"
+  ],
+  "LIB": [
+    "ICUtils",
+    "Fed9UUtils"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tkonlinesw/4.2.0-1_gcc7-b3a7186cfc89e64130729fa95235a07e/lib"
+  ],
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tkonlinesw/4.2.0-1_gcc7-b3a7186cfc89e64130729fa95235a07e/include"
+    ]
+  },
+  "TKONLINESW_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tkonlinesw/4.2.0-1_gcc7-b3a7186cfc89e64130729fa95235a07e",
+  "TOOLNAME": "tkonlinesw",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "4.2.0-1_gcc7-b3a7186cfc89e64130729fa95235a07e",
+  "USE": [
+    "root_cxxdefaults",
+    "xerces-c"
+  ],
+  "VARIABLES": [
+    "TKONLINESW_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

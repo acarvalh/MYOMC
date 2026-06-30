@@ -1,0 +1,5 @@
+<tool name="boost_serialization" version="1.80.0-fe2842446e7b8c2042e86925ee67be29">
+  <info url="http://www.boost.org"/>
+  <lib name="boost_serialization"/>
+  <use name="boost"/>
+</tool>

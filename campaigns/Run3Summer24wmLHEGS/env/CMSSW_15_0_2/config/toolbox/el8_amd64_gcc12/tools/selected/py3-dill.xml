@@ -1,0 +1,6 @@
+<tool name="py3-dill" version="0.3.8-9f9dfa30c2141d0036e9e45947a93592" revision="1">
+  <client>
+    <environment name="PY3_DILL_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dill/0.3.8-9f9dfa30c2141d0036e9e45947a93592"/>
+  </client>
+  <runtime name="PATH" value="$PY3_DILL_BASE/bin" type="path"/>
+</tool>

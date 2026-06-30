@@ -1,0 +1,12 @@
+{
+  "LIB": [
+    "torch",
+    "torch_cpu",
+    "c10"
+  ],
+  "TOOLNAME": "pytorch",
+  "TOOLVERSION": "2.1.1-c4bf74c288414b56635b988d4fa55bf1",
+  "USE": [
+    "torch-interface"
+  ]
+}

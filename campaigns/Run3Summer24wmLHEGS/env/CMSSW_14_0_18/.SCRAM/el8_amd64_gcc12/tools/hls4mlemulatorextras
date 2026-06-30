@@ -1,0 +1,22 @@
+{
+  "HLS4MLEMULATOREXTRAS_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hls4mlEmulatorExtras/1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hls4mlEmulatorExtras/1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40/include"
+  ],
+  "LIB": [
+    "emulator_interface"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hls4mlEmulatorExtras/1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40/lib64"
+  ],
+  "TOOLNAME": "hls4mlemulatorextras",
+  "TOOLVERSION": "1.1.3-7abf6dadd3e09d4bf89fb5c47d56db40",
+  "USE": [
+    "sockets"
+  ],
+  "VARIABLES": [
+    "HLS4MLEMULATOREXTRAS_BASE",
+    "INCLUDE",
+    "LIBDIR"
+  ]
+}

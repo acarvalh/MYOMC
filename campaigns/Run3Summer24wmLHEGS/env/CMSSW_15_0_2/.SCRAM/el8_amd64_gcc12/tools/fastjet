@@ -1,0 +1,32 @@
+{
+  "FASTJET_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet/3.4.1-43adababf6036a99696d8ed78b995b5c",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet/3.4.1-43adababf6036a99696d8ed78b995b5c/include"
+  ],
+  "LIB": [
+    "fastjetplugins",
+    "fastjettools",
+    "siscone",
+    "siscone_spherical",
+    "fastjet"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet/3.4.1-43adababf6036a99696d8ed78b995b5c/lib"
+  ],
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet/3.4.1-43adababf6036a99696d8ed78b995b5c/include"
+    ]
+  },
+  "TOOLNAME": "fastjet",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "3.4.1-43adababf6036a99696d8ed78b995b5c",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "FASTJET_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

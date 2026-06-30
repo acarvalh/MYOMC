@@ -1,0 +1,5 @@
+<tool name="fastjet_x86-64-v3" version="3.4.1-ba4583d2e4cd4f842c18fb3c74b5322c">
+  <client>
+    <environment name="X86_64_V3_LIBDIR" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet_x86-64-v3/3.4.1-ba4583d2e4cd4f842c18fb3c74b5322c/lib"/>
+  </client>
+</tool>

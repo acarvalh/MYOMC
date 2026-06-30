@@ -1,0 +1,6 @@
+<tool name="py3-rsa" version="4.9-cf803a800afdfa26f86821999c1aaa09">
+  <client>
+    <environment name="PY3_RSA_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-rsa/4.9-cf803a800afdfa26f86821999c1aaa09"/>
+  </client>
+  <runtime name="PATH" value="$PY3_RSA_BASE/bin" type="path"/>
+</tool>

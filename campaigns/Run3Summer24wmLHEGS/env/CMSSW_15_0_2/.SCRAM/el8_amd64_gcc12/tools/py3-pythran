@@ -1,0 +1,14 @@
+{
+  "PY3_PYTHRAN_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-pythran/0.15.0-a033240fb76a789446ed860cffe275f9",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-pythran/0.15.0-a033240fb76a789446ed860cffe275f9/bin"
+    ]
+  },
+  "TOOLNAME": "py3-pythran",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "0.15.0-a033240fb76a789446ed860cffe275f9",
+  "VARIABLES": [
+    "PY3_PYTHRAN_BASE"
+  ]
+}

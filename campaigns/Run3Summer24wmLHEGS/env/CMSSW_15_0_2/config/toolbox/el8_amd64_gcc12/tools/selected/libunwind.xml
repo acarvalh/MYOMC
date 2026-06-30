@@ -1,0 +1,10 @@
+<tool name="libunwind" version="1.8.1-master-a1f33e1792113c04e68d8dc376d9bb9f" revision="1">
+  <lib name="unwind"/>
+  <client>
+    <environment name="LIBUNWIND_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.8.1-master-a1f33e1792113c04e68d8dc376d9bb9f"/>
+    <environment name="INCLUDE"      default="$LIBUNWIND_BASE/include"/>
+    <environment name="LIBDIR"       default="$LIBUNWIND_BASE/lib"/>
+  </client>
+  <runtime name="ROOT_INCLUDE_PATH" value="$INCLUDE" type="path"/>
+  <use name="root_cxxdefaults"/>
+</tool>

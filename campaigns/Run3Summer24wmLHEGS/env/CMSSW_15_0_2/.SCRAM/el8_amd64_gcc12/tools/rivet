@@ -1,0 +1,44 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/include"
+  ],
+  "LIB": [
+    "Rivet"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/lib"
+  ],
+  "RIVET_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/bin"
+    ],
+    "PATH:PDFPATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/share"
+    ],
+    "PATH:RIVET_DATA_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/share/Rivet"
+    ],
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/4.0.2-f8613c07b66f5e6e5f9801a970b04a88/include"
+    ]
+  },
+  "TOOLNAME": "rivet",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "4.0.2-f8613c07b66f5e6e5f9801a970b04a88",
+  "USE": [
+    "hepmc",
+    "fastjet",
+    "fastjet-contrib",
+    "gsl",
+    "yoda",
+    "hdf5",
+    "highfive",
+    "onnxruntime"
+  ],
+  "VARIABLES": [
+    "RIVET_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

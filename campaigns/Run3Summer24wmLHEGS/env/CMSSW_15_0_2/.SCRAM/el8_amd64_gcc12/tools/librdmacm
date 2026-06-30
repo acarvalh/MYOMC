@@ -1,0 +1,12 @@
+{
+  "LIB": [
+    "rdmacm"
+  ],
+  "TOOLNAME": "librdmacm",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "50.0-ad857c0789cc72343fcef7baa33e14c3",
+  "USE": [
+    "rdma-core",
+    "libibverbs"
+  ]
+}

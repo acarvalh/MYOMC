@@ -1,0 +1,6 @@
+<tool name="py3-meson" version="1.1.0-2d4de293224a706675eeb29fd6a07277">
+  <client>
+    <environment name="PY3_MESON_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-meson/1.1.0-2d4de293224a706675eeb29fd6a07277"/>
+  </client>
+  <runtime name="PATH" value="$PY3_MESON_BASE/bin" type="path"/>
+</tool>

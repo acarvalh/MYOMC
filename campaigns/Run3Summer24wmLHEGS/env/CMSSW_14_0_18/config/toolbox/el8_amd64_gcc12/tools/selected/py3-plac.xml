@@ -1,0 +1,6 @@
+<tool name="py3-plac" version="1.3.5-2a5ca5b587e58c2184d0378fc7b09108">
+  <client>
+    <environment name="PY3_PLAC_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-plac/1.3.5-2a5ca5b587e58c2184d0378fc7b09108"/>
+  </client>
+  <runtime name="PATH" value="$PY3_PLAC_BASE/bin" type="path"/>
+</tool>

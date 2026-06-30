@@ -1,0 +1,5 @@
+<tool name="gbl_x86-64-v3" version="V03-01-01-761aca7a77ea49762a41aed462632851">
+  <client>
+    <environment name="X86_64_V3_LIBDIR" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gbl_x86-64-v3/V03-01-01-761aca7a77ea49762a41aed462632851/lib"/>
+  </client>
+</tool>

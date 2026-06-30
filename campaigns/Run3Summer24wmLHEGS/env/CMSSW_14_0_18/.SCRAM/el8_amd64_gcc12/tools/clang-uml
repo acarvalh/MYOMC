@@ -1,0 +1,17 @@
+{
+  "CLANG_UML_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clang-uml/0.4.1-3eaa0aa7b407ddd9ac8b4a20e03ca1a6",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clang-uml/0.4.1-3eaa0aa7b407ddd9ac8b4a20e03ca1a6/bin"
+    ]
+  },
+  "TOOLNAME": "clang-uml",
+  "TOOLVERSION": "0.4.1-3eaa0aa7b407ddd9ac8b4a20e03ca1a6",
+  "USE": [
+    "yaml-cpp",
+    "zlib"
+  ],
+  "VARIABLES": [
+    "CLANG_UML_BASE"
+  ]
+}

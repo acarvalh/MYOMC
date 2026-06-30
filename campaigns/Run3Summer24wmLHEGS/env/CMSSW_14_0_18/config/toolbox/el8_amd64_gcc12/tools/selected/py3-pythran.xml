@@ -1,0 +1,6 @@
+<tool name="py3-pythran" version="0.12.1-659720cceda26c28024c22aeedd8cb8e">
+  <client>
+    <environment name="PY3_PYTHRAN_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-pythran/0.12.1-659720cceda26c28024c22aeedd8cb8e"/>
+  </client>
+  <runtime name="PATH" value="$PY3_PYTHRAN_BASE/bin" type="path"/>
+</tool>

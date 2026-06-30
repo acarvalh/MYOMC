@@ -1,0 +1,28 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-prof/5.3.0-561d348252c0d28cbc89da0561ba005a/include"
+  ],
+  "JEMALLOC_PROF_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-prof/5.3.0-561d348252c0d28cbc89da0561ba005a",
+  "LIB": [
+    "jemalloc-prof"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-prof/5.3.0-561d348252c0d28cbc89da0561ba005a/lib"
+  ],
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-prof/5.3.0-561d348252c0d28cbc89da0561ba005a/include"
+    ]
+  },
+  "TOOLNAME": "jemalloc-prof",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "5.3.0-561d348252c0d28cbc89da0561ba005a",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "JEMALLOC_PROF_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "FLAGS": {
+    "SYSTEM_INCLUDE": [
+      "1"
+    ]
+  },
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/include"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/lib"
+  ],
+  "ROOT_INTERFACE_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/bin"
+    ],
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/include"
+    ],
+    "ROOTSYS": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/"
+    ],
+    "ROOT_TTREECACHE_PREFILL": [
+      "0"
+    ],
+    "ROOT_TTREECACHE_SIZE": [
+      "0"
+    ]
+  },
+  "TOOLNAME": "root_interface",
+  "TOOLVERSION": "6.30.03-eeaa8ee64e8127bca194ba397d21d514",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "ROOT_INTERFACE_BASE",
+    "INCLUDE",
+    "LIBDIR"
+  ]
+}

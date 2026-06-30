@@ -1,0 +1,14 @@
+{
+  "PY3_HATCH_FANCY_PYPI_README_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-hatch-fancy-pypi-readme/24.1.0-b6d50c61bd4e3e6f34cb78199f14dd1d",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-hatch-fancy-pypi-readme/24.1.0-b6d50c61bd4e3e6f34cb78199f14dd1d/bin"
+    ]
+  },
+  "TOOLNAME": "py3-hatch-fancy-pypi-readme",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "24.1.0-b6d50c61bd4e3e6f34cb78199f14dd1d",
+  "VARIABLES": [
+    "PY3_HATCH_FANCY_PYPI_README_BASE"
+  ]
+}

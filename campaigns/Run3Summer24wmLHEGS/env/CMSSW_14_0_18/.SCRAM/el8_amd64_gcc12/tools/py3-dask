@@ -1,0 +1,13 @@
+{
+  "PY3_DASK_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dask/2023.4.0-c919d1456a12aac51f9e08edeb64d49c",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dask/2023.4.0-c919d1456a12aac51f9e08edeb64d49c/bin"
+    ]
+  },
+  "TOOLNAME": "py3-dask",
+  "TOOLVERSION": "2023.4.0-c919d1456a12aac51f9e08edeb64d49c",
+  "VARIABLES": [
+    "PY3_DASK_BASE"
+  ]
+}

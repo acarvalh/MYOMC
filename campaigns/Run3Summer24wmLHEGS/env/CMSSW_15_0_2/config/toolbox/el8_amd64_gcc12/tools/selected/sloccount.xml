@@ -1,0 +1,7 @@
+  <tool name="sloccount" version="2.26-4b1a085143a46ac8fe17dbb2a9ade427" revision="1">
+    <info url="http://www.dwheeler.com/sloccount/"/>
+    <client>
+      <environment name="SLOCCOUNT_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sloccount/2.26-4b1a085143a46ac8fe17dbb2a9ade427"/>
+    </client>
+    <runtime name="PATH" value="$SLOCCOUNT_BASE/bin" type="path"/>
+  </tool>

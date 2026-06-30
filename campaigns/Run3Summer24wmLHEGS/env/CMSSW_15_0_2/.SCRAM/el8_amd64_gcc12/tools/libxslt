@@ -1,0 +1,20 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libxslt/1.1.28-b453ee1dadb5de07931e8f863ea2e9e0/include/libxslt"
+  ],
+  "LIB": [
+    "xslt"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libxslt/1.1.28-b453ee1dadb5de07931e8f863ea2e9e0/lib"
+  ],
+  "LIBXSLT_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libxslt/1.1.28-b453ee1dadb5de07931e8f863ea2e9e0",
+  "TOOLNAME": "libxslt",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.1.28-b453ee1dadb5de07931e8f863ea2e9e0",
+  "VARIABLES": [
+    "LIBXSLT_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

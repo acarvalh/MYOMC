@@ -1,0 +1,13 @@
+{
+  "PY3_HISTOGRAMMAR_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-histogrammar/1.0.33-d2474f15fac4297c9af58596be73eace",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-histogrammar/1.0.33-d2474f15fac4297c9af58596be73eace/bin"
+    ]
+  },
+  "TOOLNAME": "py3-histogrammar",
+  "TOOLVERSION": "1.0.33-d2474f15fac4297c9af58596be73eace",
+  "VARIABLES": [
+    "PY3_HISTOGRAMMAR_BASE"
+  ]
+}

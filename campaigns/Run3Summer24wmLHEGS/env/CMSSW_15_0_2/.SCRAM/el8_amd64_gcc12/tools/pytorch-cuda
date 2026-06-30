@@ -1,0 +1,13 @@
+{
+  "LIB": [
+    "torch_cuda",
+    "c10_cuda"
+  ],
+  "TOOLNAME": "pytorch-cuda",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "2.4.0-6449ad4fb456b3cd15dacc73581b016d",
+  "USE": [
+    "cuda",
+    "torch-interface"
+  ]
+}

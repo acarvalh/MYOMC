@@ -1,0 +1,8 @@
+{
+  "TOOLNAME": "lwtnn_x86-64-v3",
+  "TOOLVERSION": "2.14.1-fd6445ae28dbcdef42a3d6dc87130c74",
+  "VARIABLES": [
+    "X86_64_V3_LIBDIR"
+  ],
+  "X86_64_V3_LIBDIR": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lwtnn_x86-64-v3/2.14.1-fd6445ae28dbcdef42a3d6dc87130c74/lib"
+}

@@ -1,0 +1,31 @@
+{
+  "EVTGEN_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/evtgen/2.0.0-8622f2d07e842eebf36ec1457992d05b",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/evtgen/2.0.0-8622f2d07e842eebf36ec1457992d05b/include"
+  ],
+  "LIB": [
+    "EvtGen",
+    "EvtGenExternal"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/evtgen/2.0.0-8622f2d07e842eebf36ec1457992d05b/lib"
+  ],
+  "RUNTIME": {
+    "EVTGENDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/evtgen/2.0.0-8622f2d07e842eebf36ec1457992d05b/share/EvtGen"
+    ]
+  },
+  "TOOLNAME": "evtgen",
+  "TOOLVERSION": "2.0.0-8622f2d07e842eebf36ec1457992d05b",
+  "USE": [
+    "hepmc",
+    "pythia8",
+    "tauolapp",
+    "photospp"
+  ],
+  "VARIABLES": [
+    "EVTGEN_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

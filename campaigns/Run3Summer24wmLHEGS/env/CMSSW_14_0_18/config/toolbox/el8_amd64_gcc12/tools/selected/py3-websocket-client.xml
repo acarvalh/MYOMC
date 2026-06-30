@@ -1,0 +1,6 @@
+<tool name="py3-websocket-client" version="1.5.1-2e8f7ad568ec20b7f16fc6014ddb444e">
+  <client>
+    <environment name="PY3_WEBSOCKET_CLIENT_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-websocket-client/1.5.1-2e8f7ad568ec20b7f16fc6014ddb444e"/>
+  </client>
+  <runtime name="PATH" value="$PY3_WEBSOCKET_CLIENT_BASE/bin" type="path"/>
+</tool>

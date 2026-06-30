@@ -1,0 +1,14 @@
+{
+  "CXX": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef/bin/c++-analyzer",
+  "LLVM_ANALYZER_CXXCOMPILER_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef",
+  "SCRAM_COMPILER": 1,
+  "TOOLNAME": "llvm-analyzer-cxxcompiler",
+  "TOOLVERSION": "17.0.3-58617194c079c8f35fd2aa0eeb9674ef",
+  "USE": [
+    "llvm-cxxcompiler"
+  ],
+  "VARIABLES": [
+    "LLVM_ANALYZER_CXXCOMPILER_BASE",
+    "CXX"
+  ]
+}

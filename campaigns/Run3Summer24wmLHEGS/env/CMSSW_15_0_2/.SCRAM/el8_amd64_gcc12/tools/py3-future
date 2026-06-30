@@ -1,0 +1,14 @@
+{
+  "PY3_FUTURE_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-future/1.0.0-b30ab7423730d9c9f0aff96164113b34",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-future/1.0.0-b30ab7423730d9c9f0aff96164113b34/bin"
+    ]
+  },
+  "TOOLNAME": "py3-future",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.0.0-b30ab7423730d9c9f0aff96164113b34",
+  "VARIABLES": [
+    "PY3_FUTURE_BASE"
+  ]
+}

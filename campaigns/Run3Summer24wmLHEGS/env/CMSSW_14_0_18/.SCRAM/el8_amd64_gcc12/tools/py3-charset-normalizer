@@ -1,0 +1,13 @@
+{
+  "PY3_CHARSET_NORMALIZER_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-charset-normalizer/3.1.0-fe531f8d922e7899eebaf6a5b7433057",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-charset-normalizer/3.1.0-fe531f8d922e7899eebaf6a5b7433057/bin"
+    ]
+  },
+  "TOOLNAME": "py3-charset-normalizer",
+  "TOOLVERSION": "3.1.0-fe531f8d922e7899eebaf6a5b7433057",
+  "VARIABLES": [
+    "PY3_CHARSET_NORMALIZER_BASE"
+  ]
+}

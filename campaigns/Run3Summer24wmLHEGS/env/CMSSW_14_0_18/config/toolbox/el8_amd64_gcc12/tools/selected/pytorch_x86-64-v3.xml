@@ -1,0 +1,5 @@
+<tool name="pytorch_x86-64-v3" version="2.1.1-6bc15cba8255362c3133ce91f062b272">
+  <client>
+    <environment name="X86_64_V3_LIBDIR" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pytorch_x86-64-v3/2.1.1-6bc15cba8255362c3133ce91f062b272/lib"/>
+  </client>
+</tool>

@@ -1,0 +1,6 @@
+<tool name="py3-coverage" version="7.2.2-2fa56c63866c9f242358d59d9fcddd05">
+  <client>
+    <environment name="PY3_COVERAGE_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-coverage/7.2.2-2fa56c63866c9f242358d59d9fcddd05"/>
+  </client>
+  <runtime name="PATH" value="$PY3_COVERAGE_BASE/bin" type="path"/>
+</tool>

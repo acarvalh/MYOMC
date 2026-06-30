@@ -1,0 +1,13 @@
+{
+  "PY3_ONNX_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-onnx/1.14.0-b5f0b541fb1258d07ff6f1ac6a726127",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-onnx/1.14.0-b5f0b541fb1258d07ff6f1ac6a726127/bin"
+    ]
+  },
+  "TOOLNAME": "py3-onnx",
+  "TOOLVERSION": "1.14.0-b5f0b541fb1258d07ff6f1ac6a726127",
+  "VARIABLES": [
+    "PY3_ONNX_BASE"
+  ]
+}

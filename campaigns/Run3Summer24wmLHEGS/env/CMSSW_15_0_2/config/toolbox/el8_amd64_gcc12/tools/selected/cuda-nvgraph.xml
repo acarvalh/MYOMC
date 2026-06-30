@@ -1,0 +1,5 @@
+<tool name="cuda-nvgraph" version="12.8.0-15bfa86985d46d842bb5ecc3aca6c676" revision="1">
+  <info url="https://docs.nvidia.com/cuda/nvgraph/index.html"/>
+  <use name="cuda"/>
+  <lib name="nvgraph"/>
+</tool>

@@ -1,0 +1,6 @@
+<tool name="py3-markdown-it-py" version="2.2.0-6365f9dae5df229385782b6deb2815b6">
+  <client>
+    <environment name="PY3_MARKDOWN_IT_PY_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-markdown-it-py/2.2.0-6365f9dae5df229385782b6deb2815b6"/>
+  </client>
+  <runtime name="PATH" value="$PY3_MARKDOWN_IT_PY_BASE/bin" type="path"/>
+</tool>

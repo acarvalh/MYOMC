@@ -1,0 +1,13 @@
+{
+  "PY3_VERSIONEER_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-versioneer/0.28-53245f6664efa72ab2debc796bf9d273",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-versioneer/0.28-53245f6664efa72ab2debc796bf9d273/bin"
+    ]
+  },
+  "TOOLNAME": "py3-versioneer",
+  "TOOLVERSION": "0.28-53245f6664efa72ab2debc796bf9d273",
+  "VARIABLES": [
+    "PY3_VERSIONEER_BASE"
+  ]
+}

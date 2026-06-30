@@ -1,0 +1,6 @@
+<tool name="py3-flake8" version="7.0.0-7e3cc81beecf011ce666debd1ee64db2" revision="1">
+  <client>
+    <environment name="PY3_FLAKE8_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-flake8/7.0.0-7e3cc81beecf011ce666debd1ee64db2"/>
+  </client>
+  <runtime name="PATH" value="$PY3_FLAKE8_BASE/bin" type="path"/>
+</tool>

@@ -1,0 +1,35 @@
+{
+  "BINDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820/bin"
+  ],
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820/include"
+  ],
+  "LIB": [
+    "protobuf"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820/lib"
+  ],
+  "PROTOBUF_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820/bin"
+    ],
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-3b4dc3892e5c8da1829fdf0bfe570820/include"
+    ]
+  },
+  "TOOLNAME": "protobuf",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "3.21.9-3b4dc3892e5c8da1829fdf0bfe570820",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "PROTOBUF_BASE",
+    "INCLUDE",
+    "LIBDIR",
+    "BINDIR"
+  ]
+}

@@ -1,0 +1,6 @@
+<tool name="py3-charset-normalizer" version="3.3.2-b802cce4f153f136276606a5a5b505d9" revision="1">
+  <client>
+    <environment name="PY3_CHARSET_NORMALIZER_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-charset-normalizer/3.3.2-b802cce4f153f136276606a5a5b505d9"/>
+  </client>
+  <runtime name="PATH" value="$PY3_CHARSET_NORMALIZER_BASE/bin" type="path"/>
+</tool>

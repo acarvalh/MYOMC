@@ -1,0 +1,11 @@
+{
+  "LIB": [
+    "nvgraph"
+  ],
+  "TOOLNAME": "cuda-nvgraph",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "12.8.0-15bfa86985d46d842bb5ecc3aca6c676",
+  "USE": [
+    "cuda"
+  ]
+}

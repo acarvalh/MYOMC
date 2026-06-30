@@ -1,0 +1,27 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/triton-inference-client/2.25.0-2dc076293aad9b5ba3879708bd768add/include"
+  ],
+  "LIB": [
+    "grpcclient",
+    "tritoncommonmodelconfig"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/triton-inference-client/2.25.0-2dc076293aad9b5ba3879708bd768add/lib"
+  ],
+  "TOOLNAME": "triton-inference-client",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "2.25.0-2dc076293aad9b5ba3879708bd768add",
+  "TRITON_INFERENCE_CLIENT_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/triton-inference-client/2.25.0-2dc076293aad9b5ba3879708bd768add",
+  "USE": [
+    "protobuf",
+    "grpc",
+    "cuda",
+    "re2"
+  ],
+  "VARIABLES": [
+    "TRITON_INFERENCE_CLIENT_BASE",
+    "INCLUDE",
+    "LIBDIR"
+  ]
+}

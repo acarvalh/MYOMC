@@ -1,0 +1,407 @@
+{
+  "RTBOURNE": {
+    "DEFAULT_COMPILER": "gcc"
+  },
+  "path": {
+    "CMSSW_DATA_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms"
+    ],
+    "CMSSW_FWLITE_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sherpa/2.2.15-a217debb2169ea8c4359a08617e9e53a/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hepmc/2.06.10-84d62bf8401502062c47cad693db65fe/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clhep/2.4.7.1-5c1cfd46e8f0e61f022ff44f21c90ce1/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/boost/1.80.0-fe2842446e7b8c2042e86925ee67be29/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hepmc3/3.2.7-fd16dc6ff1399275c883ed21e455694f/include"
+    ],
+    "CMSSW_SEARCH_PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/poison",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/src",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/external/el8_amd64_gcc12/data",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/src",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/external/el8_amd64_gcc12/data"
+    ],
+    "CMS_OPENLOOPS_PREFIX": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/openloops/2.1.2-e1fbc50ea259aad4e0bdd7f70be96394"
+    ],
+    "G4ABLADATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4ABLA/3.1-9db33ef273420e1950b3fddf6274df58/data/G4ABLA3.1"
+    ],
+    "G4ENSDFSTATEDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4ENSDFSTATE/2.3-ab69597494385a5787c13a1eaa41845d/data/G4ENSDFSTATE2.3"
+    ],
+    "G4INCLDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4INCL/1.0-c058902db09545bee674b935f319d750/data/G4INCL1.0"
+    ],
+    "G4LEDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4EMLOW/8.2-18ed6133bd6656893ddf362cd6371161/data/G4EMLOW8.2"
+    ],
+    "G4LEVELGAMMADATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4PhotonEvaporation/5.7-c43ec0e118754b5b1fd64233fd042f7f/data/PhotonEvaporation5.7"
+    ],
+    "G4NEUTRONHPDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4NDL/4.6-7b6fb9b2e29401d71e613747cce7135f/data/G4NDL4.6"
+    ],
+    "G4PARTICLEXSDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4PARTICLEXS/4.0-d1508000b9255a6d004ea15b79c57b30/data/G4PARTICLEXS4.0"
+    ],
+    "G4RADIOACTIVEDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4RadioactiveDecay/5.6-d42e13e021a350d26536fa1a09666268/data/RadioactiveDecay5.6"
+    ],
+    "G4REALSURFACEDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4RealSurface/2.2-e1c660888cdf84f71ec98e616ac8547c/data/RealSurface2.2"
+    ],
+    "G4SAIDXSDATA": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4-G4SAIDDATA/2.0-740ded83ad733e143258677560a5945e/data/G4SAIDDATA2.0"
+    ],
+    "GIT_EXEC_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/git/2.38.1-d88f9230068c6ed5dea1cd9acfe040f9/libexec/git-core"
+    ],
+    "GIT_SSL_CAINFO": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/git/2.38.1-d88f9230068c6ed5dea1cd9acfe040f9/share/ssl/certs/ca-bundle.crt"
+    ],
+    "GIT_TEMPLATE_DIR": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/git/2.38.1-d88f9230068c6ed5dea1cd9acfe040f9/share/git-core/templates"
+    ],
+    "GOSAMCONTRIB_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gosamcontrib/2.0-20150803-9e0755b7295f958b571160de86d4a95b"
+    ],
+    "HWLOC_PLUGINS_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hwloc/2.10.0-df218cbc5f04bace13335a6abdc9c11d/lib/hwloc"
+    ],
+    "LD_LIBRARY_PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/biglib/el8_amd64_gcc12",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/external/el8_amd64_gcc12/lib",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/biglib/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/external/el8_amd64_gcc12/lib",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef/lib64",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28/lib64",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28/lib"
+    ],
+    "MANPATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/numactl/2.0.14-008b3e5466cf9216c5293916e495bd35/share/man"
+    ],
+    "PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/bin/el8_amd64_gcc12",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/external/el8_amd64_gcc12/bin",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/bin/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/external/el8_amd64_gcc12/bin",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/llvm/17.0.3-58617194c079c8f35fd2aa0eeb9674ef/bin",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28/bin"
+    ],
+    "PDFPATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/3.1.8-fe98283329d498620b8b96c11397b8de/share"
+    ],
+    "PERL5LIB": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/git/2.38.1-d88f9230068c6ed5dea1cd9acfe040f9/share/perl5"
+    ],
+    "PYTHON3PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/python",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/python",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/coral/CORAL_2_3_21-e08aab9d9be15ac0fb7b6f45c2d56941/el8_amd64_gcc12/python",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/coral/CORAL_2_3_21-e08aab9d9be15ac0fb7b6f45c2d56941/el8_amd64_gcc12/lib",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw-tool-conf/60.0-24ed4339485d798572627b88715f36e2/lib/python3.9/site-packages"
+    ],
+    "RIVET_ANALYSIS_PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/external/el8_amd64_gcc12/lib/Rivet",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/lib/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/external/el8_amd64_gcc12/lib/Rivet"
+    ],
+    "RIVET_DATA_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/3.1.8-fe98283329d498620b8b96c11397b8de/share/Rivet"
+    ],
+    "ROOT_GCC_TOOLCHAIN": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28"
+    ],
+    "ROOT_INCLUDE_PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/src",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/src",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/mctester/1.25.1-1e93bbb6206a019f3db6f1c6dc0bab99/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/dd4hep/v01-27-02-141b4bb9a35f04be2d5252ae0ee15915/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/herwig7/7.2.2-44f99e8042216b7d024360f8ae34c735/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tauolapp/1.1.8-7be2943809cb7971245caac5e58ef7c5/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sherpa/2.2.15-a217debb2169ea8c4359a08617e9e53a/include/SHERPA-MC",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lwtnn/2.14.1-f81d16c1dffd19723fc1569cf11a3830/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/thepeg/2.2.2-31bb60985c407e0139daced5d502f116/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pythia8/309-d0cc659066c4ce30e87773cccde7738d/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/starlight/r193-f88a9b56a5cba56e1735fa355aea6f5a/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/3.1.8-fe98283329d498620b8b96c11397b8de/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/highfive/2.3.1-8f276f1769c5bc15b83b6b8c82096df4/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/classlib/3.1.3-d0fb1478d37e501c65a346e5fa85a200/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-5969784ee06af968580d5197ca83d374/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/geant4/11.1.2-64a948d0da50afc1b46609c8e2c0e393/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/alpaka/1.1.0-c6af69ddd6f2ee5be4f2b069590bae19/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tkonlinesw/4.2.0-1_gcc7-7787bd5bd1b6656002f7187d8e352a54/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pcre2/10.36-dc3659c052657671d667638374925ebc/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libungif/4.1.4-2f91a77bad1564f8547f5d13089fd857/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libtiff/4.0.10-bdac8c539bf3892024554f734a79888f/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libpng/1.6.37-7461873793d4834865bcbd73bf2bfcd6/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/frontier_client/2.10.2-e61fe125091fae8cc526214bca0a29f9/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pcre/8.43-37eb2e8b73bab83d6645ecfd5d73dcaa/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/zstd/1.5.2-0530c990dd9ca27a8d966ab201ed2dfe/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/xrootd/5.6.4-1cd59ba86df003d00e7606507be61349/include/xrootd/private",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/vdt/0.4.3-5a80085534117eaccb28e669c6da4b6f/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/valgrind/3.23.0-143b83b3001a13f5bb2e0a4b5445fed5/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/utm/utm_0.13.0-9d1f94693515f7433ad1e5609c971ad2/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sigcpp/3.2.0-088dbeedbd32a7524fa993c76844b9a8/include/sigc++-3.0",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sqlite/3.36.0-fde8c1dbb8f282eaade54b13a9a9d4c6/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm-rocrand/5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pacparser/1.4.2-7a755e2c5b151cdf9eeb889f2c4ee90f/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/oracle/19.11.0.0.0dbru-0ef9ee763c1e7a90d8c4515a5af97f0b/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-numpy/1.24.3-6c4922f4e317e74c4b82416c41722d10/c-api/core/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/meschach/1.2.pCMS1-79435924678a8cc522f783c34e3865d7/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lz4/1.9.2-e478fcd3e5e191d5bb4ade190474ad76/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libuuid/2.34-27ce4c3579b5b1de2808ea9c4cd8ed29/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libjpeg-turbo/2.0.2-cfe908f70a445c34076845aedc9ca824/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ktjet/1.06-35642c410ec972a29f6d8b3b15110097/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-prof/5.3.0-0dec43751bcd411f9664d8b331c790aa/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc-debug/5.3.0-26b8c2b1e630fea06966ad7f86d7fdf7/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/jemalloc/5.3.0-3416db0688377af1e4ae62ddc3410095/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hls/2019.08-8afb4083e7b06154cf0bca6d787b688f/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/madgraph5amcatnlo/2.7.3-9152fec55bee9d15a71b570dcc4bade8",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/heppdt/3.04.01-7b672d03b6f9782fcdc99b01e232ebb3/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hector/1.3.4_patch1-53f47e0871e17cc1734dd22457125a73/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/protobuf/3.21.9-999e041f1a53b3ff94ee65a9cc8b7a2c/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.7.2-master-c8f891246bba0e1ca471309188b37284/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/giflib/5.2.0-07dfc72586a7288f078c7a02c8b17956/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gdbm/1.10-1f0ec10a142f21150eef9d32ba579779/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/freetype/2.10.0-2f842c6203ecd373af1bd11574a751c3/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fftw3/3.3.8-5270bdf9998065b38f91e9aa053c73ec/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fftjet/1.5.0-4c95f831c41530ec8fa31a87717d9e5b/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fastjet/3.4.1-5cbe96b15332d701f2daba5eba5026f0/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/xz/5.2.5-6f3f49b07db84e10c9be594a1176c114/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/dcap/2.47.12-5b22a716d41ee46990f5c71005a19f8d/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libxml2/2.9.10-843ced916fa9921fbf8ea97048e64257/include/libxml2",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/curl/7.79.0-959a9188e043d67b2825f64cfeb54266/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cppunit/1.15.x-fb84a4bbf5a436317d208e3ef0864e91/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/coral/CORAL_2_3_21-e08aab9d9be15ac0fb7b6f45c2d56941/include/LCG",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pythia6/426-c430ea6f2967f65248af15c71e6c653e/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hepmc/2.06.10-84d62bf8401502062c47cad693db65fe/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gsl/2.6-dc093739c7d4283cbe37712ffdbef83e/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/xerces-c/3.1.3-c7b88eaa36d0408120f3c29826a04bf6/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/expat/2.4.8-b093687a482bf386f8f8c236c5b2efa2/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/zlib/1.2.11-51072030b7f93c3ac6c4235f21e413cb/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clhep/2.4.7.1-5c1cfd46e8f0e61f022ff44f21c90ce1/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/vecgeom/v1.2.7-25fd663ce821ed1accecbf9c823853f3/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/vecgeom/v1.2.7-25fd663ce821ed1accecbf9c823853f3/include/VecGeom",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/bz2lib/1.0.6-d065ccd79984efc6d4660f410e4c81de/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tbb/v2021.9.0-c3903c50b52342174dbd3a52854a6e6d/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cuda/12.2.1-bdf3fff69eaec65abe18a7569592cab6/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/boost/1.80.0-fe2842446e7b8c2042e86925ee67be29/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/xgboost/1.7.5-9c89d217cfd2bd1ca0fdce511a31b168/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/tinyxml2/6.2.0-d17873b4d6a42a43226cf689f82ec1ef/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rdma-core/39.1-32801f3b791d7fb5e9a61012441d8c33/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ittnotify/16.06.18-60c208f4e7c36d4489d099cb73074340/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gosamcontrib/2.0-20150803-9e0755b7295f958b571160de86d4a95b/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/fmt/8.0.1-54e94b39f5cf29341bb9c4765764e1ca/include",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/eigen/3bb6a48d8c171cf20b5f8e48bfb4e424fbd4f79e-d6bc5640efdc17abf386d018e8c9ca0d/include/eigen3",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm/5.6.1-2626c83e45b49b26cbaa0eb02f6409d6/include",
+      "/usr/local/include",
+      "/usr/include"
+    ],
+    "ROOT_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/madgraph5amcatnlo/2.7.3-9152fec55bee9d15a71b570dcc4bade8",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gosamcontrib/2.0-20150803-9e0755b7295f958b571160de86d4a95b"
+    ],
+    "SHERPA_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sherpa/2.2.15-a217debb2169ea8c4359a08617e9e53a/include/SHERPA-MC"
+    ],
+    "SHERPA_LIBRARY_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sherpa/2.2.15-a217debb2169ea8c4359a08617e9e53a/lib/SHERPA-MC"
+    ],
+    "SHERPA_SHARE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/sherpa/2.2.15-a217debb2169ea8c4359a08617e9e53a/share/SHERPA-MC"
+    ],
+    "TEST_SRTOPT_PATH": [
+      "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18/test/el8_amd64_gcc12",
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18/test/el8_amd64_gcc12"
+    ],
+    "TEXMFHOME": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet/3.1.8-fe98283329d498620b8b96c11397b8de/share/Rivet/texmf"
+    ],
+    "WORKER_DATA_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/blackhat/0.9.9-987ad1acae5cc088f5b0bffc0baf5368/share/blackhat/datafiles/"
+    ]
+  },
+  "variables": [
+    {
+      "CMSSW_BASE": [
+        "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18"
+      ]
+    },
+    {
+      "CMSSW_GIT_HASH": [
+        "CMSSW_14_0_18"
+      ]
+    },
+    {
+      "CMSSW_RELEASE_BASE": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/cmssw/CMSSW_14_0_18"
+      ]
+    },
+    {
+      "CMSSW_VERSION": [
+        "CMSSW_14_0_18"
+      ]
+    },
+    {
+      "LANG": [
+        "C"
+      ]
+    },
+    {
+      "LOCALRT": [
+        "/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/campaigns/Run3Summer24wmLHEGS/env/CMSSW_14_0_18"
+      ]
+    },
+    {
+      "SCRAM_TARGET": [
+        "default"
+      ]
+    },
+    {
+      "USER_TARGETS_ALL": [
+        "1"
+      ]
+    },
+    {
+      "ROOFITSYS": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/"
+      ]
+    },
+    {
+      "EVTGENDATA": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/evtgen/2.0.0-8622f2d07e842eebf36ec1457992d05b/share/EvtGen"
+      ]
+    },
+    {
+      "HERWIGPATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/herwig7/7.2.2-44f99e8042216b7d024360f8ae34c735/share/Herwig"
+      ]
+    },
+    {
+      "GENREFLEX": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/bin/genreflex"
+      ]
+    },
+    {
+      "THEPEGPATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/thepeg/2.2.2-31bb60985c407e0139daced5d502f116/share/ThePEG"
+      ]
+    },
+    {
+      "PYTHIA8DATA": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/pythia8/309-d0cc659066c4ce30e87773cccde7738d/share/Pythia8/xmldoc"
+      ]
+    },
+    {
+      "CEPGEN_PATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cepgen/1.1.0-a48e7e31c17bc646650d593581fc2701/share/CepGen"
+      ]
+    },
+    {
+      "MLAS_DYNAMIC_CPU_ARCH": [
+        "2"
+      ]
+    },
+    {
+      "LHAPDF_DATA_PATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-5969784ee06af968580d5197ca83d374/share/LHAPDF"
+      ]
+    },
+    {
+      "FRONTIER_CLIENT": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/frontier_client/2.10.2-e61fe125091fae8cc526214bca0a29f9/"
+      ]
+    },
+    {
+      "VALGRIND_LIB": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/valgrind/3.23.0-143b83b3001a13f5bb2e0a4b5445fed5/libexec/valgrind"
+      ]
+    },
+    {
+      "UTM_XSD_DIR": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/utm/utm_0.13.0-9d1f94693515f7433ad1e5609c971ad2"
+      ]
+    },
+    {
+      "TNS_ADMIN": [
+        "/etc"
+      ]
+    },
+    {
+      "HEPPDT_PARAM_PATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/heppdt/3.04.01-7b672d03b6f9782fcdc99b01e232ebb3"
+      ]
+    },
+    {
+      "ROOTSYS": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/lcg/root/6.30.03-eeaa8ee64e8127bca194ba397d21d514/"
+      ]
+    },
+    {
+      "ROOT_TTREECACHE_PREFILL": [
+        "0"
+      ]
+    },
+    {
+      "ROOT_TTREECACHE_SIZE": [
+        "0"
+      ]
+    },
+    {
+      "CLHEP_PARAM_PATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/clhep/2.4.7.1-5c1cfd46e8f0e61f022ff44f21c90ce1"
+      ]
+    },
+    {
+      "XRDCL_RECORDER_PLUGIN": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/xrdcl-record/5.4.2-4c9060c09c61fb4b16f28e0fa554bfa4/lib64/libXrdClRecorder-5.so"
+      ]
+    },
+    {
+      "TF_CPP_MIN_LOG_LEVEL": [
+        "3"
+      ]
+    },
+    {
+      "INTEL_LICENSE_FILE": [
+        "28518@lxlicen01.cern.ch,28518@lxlicen02.cern.ch,28518@lxlicen03.cern.ch"
+      ]
+    },
+    {
+      "OPAL_PREFIX": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/openmpi/4.1.5-70640f1973b3f620e80184fbcfa23054"
+      ]
+    },
+    {
+      "CSC_TRACK_FINDER_DATA_DIR": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/CSCTrackFinderEmulation/1.2-4d8fc45bae4641b9aeb067b33fc0e482/data/"
+      ]
+    },
+    {
+      "OPENBLAS_NUM_THREADS": [
+        "1"
+      ]
+    },
+    {
+      "COMPILER_PATH": [
+        "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gcc/12.3.1-40d504be6370b5a30e3947a6e575ca28"
+      ]
+    },
+    {
+      "SCRAM_CXX11_ABI": [
+        "1"
+      ]
+    }
+  ],
+  "xenv": {
+    "SCRAM_GMAKE_PATH": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/gmake/4.3-24ac97ee64086a54e50727abb3edab0c/bin/"
+  }
+}

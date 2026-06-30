@@ -1,0 +1,34 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b/include"
+  ],
+  "LHAPDF_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b",
+  "LIB": [
+    "LHAPDF"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b/lib"
+  ],
+  "RUNTIME": {
+    "LHAPDF_DATA_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b/share/LHAPDF"
+    ],
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b/bin"
+    ],
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/lhapdf/6.4.0-a73374d8d6da1aa2194ba51da76db01b/include"
+    ]
+  },
+  "TOOLNAME": "lhapdf",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "6.4.0-a73374d8d6da1aa2194ba51da76db01b",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "LHAPDF_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

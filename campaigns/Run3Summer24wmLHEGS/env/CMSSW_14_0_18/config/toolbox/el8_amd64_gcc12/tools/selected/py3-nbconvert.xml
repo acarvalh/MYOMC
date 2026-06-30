@@ -1,0 +1,6 @@
+<tool name="py3-nbconvert" version="7.3.0-e71f914d26e2df1db22c23a45df0af82">
+  <client>
+    <environment name="PY3_NBCONVERT_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-nbconvert/7.3.0-e71f914d26e2df1db22c23a45df0af82"/>
+  </client>
+  <runtime name="PATH" value="$PY3_NBCONVERT_BASE/bin" type="path"/>
+</tool>

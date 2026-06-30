@@ -1,0 +1,13 @@
+{
+  "PY3_WHEEL_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-wheel/0.40.0-fadd141260866b08cc27f2a906ee94e6",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-wheel/0.40.0-fadd141260866b08cc27f2a906ee94e6/bin"
+    ]
+  },
+  "TOOLNAME": "py3-wheel",
+  "TOOLVERSION": "0.40.0-fadd141260866b08cc27f2a906ee94e6",
+  "VARIABLES": [
+    "PY3_WHEEL_BASE"
+  ]
+}

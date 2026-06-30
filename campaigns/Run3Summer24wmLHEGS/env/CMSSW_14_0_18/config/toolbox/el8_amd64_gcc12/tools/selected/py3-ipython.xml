@@ -1,0 +1,6 @@
+<tool name="py3-ipython" version="8.12.0-c9f4ed62220ec9d0cf379c40133ce4b9">
+  <client>
+    <environment name="PY3_IPYTHON_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-ipython/8.12.0-c9f4ed62220ec9d0cf379c40133ce4b9"/>
+  </client>
+  <runtime name="PATH" value="$PY3_IPYTHON_BASE/bin" type="path"/>
+</tool>

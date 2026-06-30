@@ -1,0 +1,11 @@
+{
+  "LIB": [
+    "DDAlign",
+    "DDCond"
+  ],
+  "TOOLNAME": "dd4hep",
+  "TOOLVERSION": "v01-27-02-141b4bb9a35f04be2d5252ae0ee15915",
+  "USE": [
+    "dd4hep-core"
+  ]
+}

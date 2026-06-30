@@ -1,0 +1,14 @@
+{
+  "PY3_FLAKE8_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-flake8/7.0.0-7e3cc81beecf011ce666debd1ee64db2",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-flake8/7.0.0-7e3cc81beecf011ce666debd1ee64db2/bin"
+    ]
+  },
+  "TOOLNAME": "py3-flake8",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "7.0.0-7e3cc81beecf011ce666debd1ee64db2",
+  "VARIABLES": [
+    "PY3_FLAKE8_BASE"
+  ]
+}

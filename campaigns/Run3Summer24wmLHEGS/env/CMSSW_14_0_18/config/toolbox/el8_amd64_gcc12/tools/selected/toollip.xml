@@ -1,0 +1,6 @@
+<tool name="toollip" version="1.0.0-75f72253c8e338da5b105c596b78b4da">
+  <client>
+    <environment name="TOOLLIP_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/TOoLLiP/1.0.0-75f72253c8e338da5b105c596b78b4da"/>
+    <environment name="LIBDIR"       default="$TOOLLIP_BASE/lib64"/>
+  </client>
+</tool>

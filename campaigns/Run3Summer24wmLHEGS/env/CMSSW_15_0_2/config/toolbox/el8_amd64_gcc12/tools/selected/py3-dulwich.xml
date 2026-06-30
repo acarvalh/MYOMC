@@ -1,0 +1,6 @@
+<tool name="py3-dulwich" version="0.22.1-f645814ce446bae9e4c1b3ab0e212af3" revision="1">
+  <client>
+    <environment name="PY3_DULWICH_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dulwich/0.22.1-f645814ce446bae9e4c1b3ab0e212af3"/>
+  </client>
+  <runtime name="PATH" value="$PY3_DULWICH_BASE/bin" type="path"/>
+</tool>

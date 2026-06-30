@@ -1,0 +1,21 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/vdt/0.4.3-f008bd09702a81e8a062bbef698ed3af/include"
+  ],
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/vdt/0.4.3-f008bd09702a81e8a062bbef698ed3af/include"
+    ]
+  },
+  "TOOLNAME": "vdt_headers",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "0.4.3-f008bd09702a81e8a062bbef698ed3af",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "VDT_HEADERS_BASE",
+    "INCLUDE"
+  ],
+  "VDT_HEADERS_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/vdt/0.4.3-f008bd09702a81e8a062bbef698ed3af"
+}

@@ -1,0 +1,5 @@
+<tool name="rivet_x86-64-v3" version="3.1.8-4860213e3f87a06e8df445b10753ba97">
+  <client>
+    <environment name="X86_64_V3_LIBDIR" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rivet_x86-64-v3/3.1.8-4860213e3f87a06e8df445b10753ba97/lib"/>
+  </client>
+</tool>

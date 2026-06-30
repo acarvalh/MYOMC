@@ -1,0 +1,6 @@
+<tool name="py3-distro" version="1.9.0-f58da53359b5e56213e743eaeb552907" revision="1">
+  <client>
+    <environment name="PY3_DISTRO_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-distro/1.9.0-f58da53359b5e56213e743eaeb552907"/>
+  </client>
+  <runtime name="PATH" value="$PY3_DISTRO_BASE/bin" type="path"/>
+</tool>

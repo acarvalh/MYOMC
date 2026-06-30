@@ -1,0 +1,6 @@
+<tool name="py3-autopep8" version="2.0.2-0fc93a265871f059ed6f1438d57e4de9">
+  <client>
+    <environment name="PY3_AUTOPEP8_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-autopep8/2.0.2-0fc93a265871f059ed6f1438d57e4de9"/>
+  </client>
+  <runtime name="PATH" value="$PY3_AUTOPEP8_BASE/bin" type="path"/>
+</tool>

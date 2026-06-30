@@ -1,0 +1,9 @@
+{
+  "TOOLNAME": "geant4",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "11.2.2-2874e23607698d953f66cc1f6e4baad9",
+  "USE": [
+    "geant4core",
+    "geant4vis"
+  ]
+}

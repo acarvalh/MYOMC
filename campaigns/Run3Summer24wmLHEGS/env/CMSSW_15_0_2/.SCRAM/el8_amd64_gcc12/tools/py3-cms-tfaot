@@ -1,0 +1,14 @@
+{
+  "PY3_CMS_TFAOT_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-cms-tfaot/1.0.1-0336add73fec86b6c9c9439eaa9fc74b",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-cms-tfaot/1.0.1-0336add73fec86b6c9c9439eaa9fc74b/bin"
+    ]
+  },
+  "TOOLNAME": "py3-cms-tfaot",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.0.1-0336add73fec86b6c9c9439eaa9fc74b",
+  "VARIABLES": [
+    "PY3_CMS_TFAOT_BASE"
+  ]
+}

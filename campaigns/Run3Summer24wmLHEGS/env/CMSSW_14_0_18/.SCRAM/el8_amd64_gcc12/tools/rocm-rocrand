@@ -1,0 +1,33 @@
+{
+  "FLAGS": {
+    "SYSTEM_INCLUDE": [
+      "1"
+    ]
+  },
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm-rocrand/5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db/include"
+  ],
+  "LIB": [
+    "hiprand",
+    "rocrand"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm-rocrand/5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db/lib"
+  ],
+  "ROCM_ROCRAND_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm-rocrand/5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db",
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rocm-rocrand/5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db/include"
+    ]
+  },
+  "TOOLNAME": "rocm-rocrand",
+  "TOOLVERSION": "5.6.1-8c7768f4a7199dc1f635d9c2dfaaf1db",
+  "USE": [
+    "rocm"
+  ],
+  "VARIABLES": [
+    "ROCM_ROCRAND_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

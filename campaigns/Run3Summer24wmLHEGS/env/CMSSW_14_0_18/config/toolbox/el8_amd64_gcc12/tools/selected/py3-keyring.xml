@@ -1,0 +1,6 @@
+<tool name="py3-keyring" version="23.13.1-4732a57372701d2eac90d4a71227758c">
+  <client>
+    <environment name="PY3_KEYRING_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-keyring/23.13.1-4732a57372701d2eac90d4a71227758c"/>
+  </client>
+  <runtime name="PATH" value="$PY3_KEYRING_BASE/bin" type="path"/>
+</tool>

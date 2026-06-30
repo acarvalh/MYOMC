@@ -1,0 +1,14 @@
+{
+  "PY3_DULWICH_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dulwich/0.22.1-f645814ce446bae9e4c1b3ab0e212af3",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-dulwich/0.22.1-f645814ce446bae9e4c1b3ab0e212af3/bin"
+    ]
+  },
+  "TOOLNAME": "py3-dulwich",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "0.22.1-f645814ce446bae9e4c1b3ab0e212af3",
+  "VARIABLES": [
+    "PY3_DULWICH_BASE"
+  ]
+}

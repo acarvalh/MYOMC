@@ -1,0 +1,14 @@
+{
+  "PY3_NBCONVERT_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-nbconvert/7.16.4-dc27530f0d6e3f24e0bd7b1fea86a2eb",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-nbconvert/7.16.4-dc27530f0d6e3f24e0bd7b1fea86a2eb/bin"
+    ]
+  },
+  "TOOLNAME": "py3-nbconvert",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "7.16.4-dc27530f0d6e3f24e0bd7b1fea86a2eb",
+  "VARIABLES": [
+    "PY3_NBCONVERT_BASE"
+  ]
+}

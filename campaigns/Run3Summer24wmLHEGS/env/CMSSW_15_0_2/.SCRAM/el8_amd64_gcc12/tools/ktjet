@@ -1,0 +1,33 @@
+{
+  "FLAGS": {
+    "CPPDEFINES": [
+      "KTDOUBLEPRECISION"
+    ]
+  },
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ktjet/1.06-46e0683890194d74dce161bda9b1f6fe/include"
+  ],
+  "KTJET_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ktjet/1.06-46e0683890194d74dce161bda9b1f6fe",
+  "LIB": [
+    "KtEvent"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ktjet/1.06-46e0683890194d74dce161bda9b1f6fe/lib"
+  ],
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/ktjet/1.06-46e0683890194d74dce161bda9b1f6fe/include"
+    ]
+  },
+  "TOOLNAME": "ktjet",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.06-46e0683890194d74dce161bda9b1f6fe",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "KTJET_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

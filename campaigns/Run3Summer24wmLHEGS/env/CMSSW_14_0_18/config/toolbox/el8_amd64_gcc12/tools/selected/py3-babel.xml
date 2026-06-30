@@ -1,0 +1,6 @@
+<tool name="py3-babel" version="2.12.1-8847fb25773231ef88bb53e9573b7efc">
+  <client>
+    <environment name="PY3_BABEL_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-babel/2.12.1-8847fb25773231ef88bb53e9573b7efc"/>
+  </client>
+  <runtime name="PATH" value="$PY3_BABEL_BASE/bin" type="path"/>
+</tool>

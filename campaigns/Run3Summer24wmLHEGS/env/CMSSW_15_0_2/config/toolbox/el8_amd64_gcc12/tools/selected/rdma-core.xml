@@ -1,0 +1,9 @@
+<tool name="rdma-core" version="50.0-ad857c0789cc72343fcef7baa33e14c3" revision="1">
+  <info url="https://github.com/linux-rdma/rdma-core/blob/master/README.md"/>
+  <client>
+    <environment name="RDMA_CORE_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/rdma-core/50.0-ad857c0789cc72343fcef7baa33e14c3"/>
+    <environment name="LIBDIR"         default="$RDMA_CORE_BASE/lib64"/>
+    <environment name="INCLUDE"        default="$RDMA_CORE_BASE/include"/>
+  </client>
+  <runtime name="ROOT_INCLUDE_PATH" value="$INCLUDE" type="path"/>
+</tool>

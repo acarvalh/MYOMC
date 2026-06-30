@@ -1,0 +1,13 @@
+{
+  "PY3_TQDM_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-tqdm/4.65.0-4a50ba4e124ea015706fb5e2b4809f4c",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-tqdm/4.65.0-4a50ba4e124ea015706fb5e2b4809f4c/bin"
+    ]
+  },
+  "TOOLNAME": "py3-tqdm",
+  "TOOLVERSION": "4.65.0-4a50ba4e124ea015706fb5e2b4809f4c",
+  "VARIABLES": [
+    "PY3_TQDM_BASE"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.7.2-master-c8f891246bba0e1ca471309188b37284/include"
+  ],
+  "LIB": [
+    "unwind"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.7.2-master-c8f891246bba0e1ca471309188b37284/lib"
+  ],
+  "LIBUNWIND_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.7.2-master-c8f891246bba0e1ca471309188b37284",
+  "RUNTIME": {
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libunwind/1.7.2-master-c8f891246bba0e1ca471309188b37284/include"
+    ]
+  },
+  "TOOLNAME": "libunwind",
+  "TOOLVERSION": "1.7.2-master-c8f891246bba0e1ca471309188b37284",
+  "USE": [
+    "root_cxxdefaults"
+  ],
+  "VARIABLES": [
+    "LIBUNWIND_BASE",
+    "INCLUDE",
+    "LIBDIR"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "FLAGS": {
+    "SYSTEM_INCLUDE": [
+      "1"
+    ]
+  },
+  "HYDJET2_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb",
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb/include"
+  ],
+  "LIB": [
+    "hydjet2"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb/lib64"
+  ],
+  "RUNTIME": {
+    "PATH:CMSSW_SEARCH_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb/data"
+    ],
+    "PATH:ROOT_INCLUDE_PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/hydjet2/2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb/include"
+    ]
+  },
+  "TOOLNAME": "hydjet2",
+  "TOOLVERSION": "2.4.3-6457bcf7b44a2e56995b9d4c4a5ccfbb",
+  "USE": [
+    "pyquen",
+    "pythia6",
+    "lhapdf",
+    "root"
+  ],
+  "VARIABLES": [
+    "HYDJET2_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

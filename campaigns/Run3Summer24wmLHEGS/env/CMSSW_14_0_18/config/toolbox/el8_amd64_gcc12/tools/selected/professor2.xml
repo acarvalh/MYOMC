@@ -1,0 +1,11 @@
+<tool name="professor2" version="2.3.3-183488c79ed9c059ac62dcf1f91c074e">
+<client>
+<environment name="PROFESSOR2_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/professor2/2.3.3-183488c79ed9c059ac62dcf1f91c074e"/>
+<environment name="LIBDIR" default="$PROFESSOR2_BASE/lib"/>
+</client>
+<use name="py3-numpy"/>
+<use name="root"/>
+<use name="yoda"/>
+<use name="eigen"/>
+<runtime name="PATH" value="$PROFESSOR2_BASE/bin" type="path"/>
+</tool>

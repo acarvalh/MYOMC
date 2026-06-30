@@ -1,0 +1,19 @@
+{
+  "INCLUDE": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libzmq/4.3.5-5bf04ee-bae57e7703e418f15f08b57d13af3769/include"
+  ],
+  "LIB": [
+    "zmq"
+  ],
+  "LIBDIR": [
+    "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libzmq/4.3.5-5bf04ee-bae57e7703e418f15f08b57d13af3769/lib"
+  ],
+  "LIBZMQ_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/libzmq/4.3.5-5bf04ee-bae57e7703e418f15f08b57d13af3769",
+  "TOOLNAME": "libzmq",
+  "TOOLVERSION": "4.3.5-5bf04ee-bae57e7703e418f15f08b57d13af3769",
+  "VARIABLES": [
+    "LIBZMQ_BASE",
+    "LIBDIR",
+    "INCLUDE"
+  ]
+}

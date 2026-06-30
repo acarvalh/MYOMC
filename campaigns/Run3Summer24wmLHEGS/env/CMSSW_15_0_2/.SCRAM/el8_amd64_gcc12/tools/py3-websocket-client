@@ -1,0 +1,14 @@
+{
+  "PY3_WEBSOCKET_CLIENT_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-websocket-client/1.8.0-4ca8568357271261841342cbf5d8a799",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-websocket-client/1.8.0-4ca8568357271261841342cbf5d8a799/bin"
+    ]
+  },
+  "TOOLNAME": "py3-websocket-client",
+  "TOOLREVISION": "1",
+  "TOOLVERSION": "1.8.0-4ca8568357271261841342cbf5d8a799",
+  "VARIABLES": [
+    "PY3_WEBSOCKET_CLIENT_BASE"
+  ]
+}

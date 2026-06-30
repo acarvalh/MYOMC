@@ -1,0 +1,11 @@
+<tool name="coral" version="CORAL_2_3_21-e08aab9d9be15ac0fb7b6f45c2d56941" type="scram">
+  <client>
+    <environment name="CORAL_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/cms/coral/CORAL_2_3_21-e08aab9d9be15ac0fb7b6f45c2d56941"/>
+    <environment name="LIBDIR" default="$CORAL_BASE/$SCRAM_ARCH/lib"/>
+    <environment name="INCLUDE" default="$CORAL_BASE/include/LCG"/>
+  </client>
+  <runtime name="PYTHON3PATH" default="$CORAL_BASE/$SCRAM_ARCH/python" type="path"/>
+  <runtime name="PYTHON3PATH" default="$CORAL_BASE/$SCRAM_ARCH/lib" type="path"/>
+  <runtime name="ROOT_INCLUDE_PATH" value="$INCLUDE" type="path"/>
+  <use name="root_cxxdefaults"/>
+</tool>

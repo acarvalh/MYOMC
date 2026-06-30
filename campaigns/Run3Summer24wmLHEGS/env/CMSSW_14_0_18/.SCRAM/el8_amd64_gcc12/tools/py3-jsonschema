@@ -1,0 +1,13 @@
+{
+  "PY3_JSONSCHEMA_BASE": "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-jsonschema/4.17.3-955e1611cb0d13528ba9d64d7dc638e2",
+  "RUNTIME": {
+    "PATH:PATH": [
+      "/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/py3-jsonschema/4.17.3-955e1611cb0d13528ba9d64d7dc638e2/bin"
+    ]
+  },
+  "TOOLNAME": "py3-jsonschema",
+  "TOOLVERSION": "4.17.3-955e1611cb0d13528ba9d64d7dc638e2",
+  "VARIABLES": [
+    "PY3_JSONSCHEMA_BASE"
+  ]
+}

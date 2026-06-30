@@ -1,0 +1,5 @@
+<tool name="zlib_x86-64-v3" version="1.2.11-9e39643728b37a4dc69b491bbe39f07c">
+  <client>
+    <environment name="X86_64_V3_LIBDIR" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/zlib_x86-64-v3/1.2.11-9e39643728b37a4dc69b491bbe39f07c/lib"/>
+  </client>
+</tool>

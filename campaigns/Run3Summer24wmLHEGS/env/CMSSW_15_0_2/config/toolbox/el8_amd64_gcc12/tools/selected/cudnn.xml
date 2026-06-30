@@ -1,0 +1,10 @@
+<tool name="cudnn" version="9.6.0.74-9f9593d5e60f18ef40154a558d2268da" revision="1">
+  <info url="https://docs.nvidia.com/deeplearning/cudnn/index.html"/>
+  <lib name="cudnn"/>
+  <client>
+    <environment name="CUDNN_BASE" default="/cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cudnn/9.6.0.74-9f9593d5e60f18ef40154a558d2268da"/>
+    <environment name="INCLUDE" default="$CUDNN_BASE/include"/>
+    <environment name="LIBDIR" default="$CUDNN_BASE/lib64"/>
+  </client>
+  <use name="cuda"/>
+</tool>
