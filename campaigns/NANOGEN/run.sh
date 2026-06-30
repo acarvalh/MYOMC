@@ -55,20 +55,20 @@ TOPDIR=$PWD
 
 # NANOGEN
 # Setup CMSSW and merge NANOGEN stuff
-#export SCRAM_ARCH=slc6_amd64_gcc700
-export SCRAM_ARCH=slc7_amd64_gcc820
-if [ -r CMSSW_10_6_32_patch1 ] ; then
-    echo release CMSSW_10_6_32_patch1 already exists
-    cd CMSSW_10_6_32_patch1/src
+# el9-native Run 3 release so the el9 ggHH_SMEFT gridpack (LCG_107 x86_64-el9)
+# runs natively under ExternalLHEProducer. CMSSW_10_6 (slc7/el7) could NOT
+# execute the el9 pwhg_main; CMSSW_14_1_8 (el9_amd64_gcc12) can.
+export SCRAM_ARCH=el9_amd64_gcc12
+if [ -r CMSSW_14_1_8 ] ; then
+    echo release CMSSW_14_1_8 already exists
+    cd CMSSW_14_1_8/src
     eval `scram runtime -sh`
     scram b -j8
     cd $TOPDIR
 else
-    scram project -n "CMSSW_10_6_32_patch1" CMSSW_10_6_32_patch1
-    cd CMSSW_10_6_32_patch1/src
+    scram project -n "CMSSW_14_1_8" CMSSW_14_1_8
+    cd CMSSW_14_1_8/src
     eval `scram runtime -sh`
-    #git cms-init
-    #git cms-merge-topic DryRun:CMSSW_10_6_22-NANOGEN
     scram b -j8
     cd $TOPDIR
 fi
@@ -89,15 +89,15 @@ cd $TOPDIR
 # cmsDriver and run
 cmsDriver.py Configuration/GenProduction/python/fragment.py \
     --python_filename "NANOGEN_${NAME}_cfg.py" \
-    --eventcontent NANOAODGEN \
+    --eventcontent NANOAODSIM \
     --customise Configuration/DataProcessing/Utils.addMonitoring \
     --datatier NANOGEN \
     --fileout "file:NANOGEN_$NAME_$JOBINDEX.root" \
-    --conditions 106X_mc2017_realistic_v6 \
-    --beamspot Realistic25ns13TeVEarly2017Collision \
-    --step LHE,GEN,NANOGEN \
+    --conditions 140X_mcRun3_2024_realistic_v26 \
+    --beamspot Realistic25ns13p6TeVEarly2023Collision \
+    --step LHE,GEN,NANO:@GEN \
     --geometry DB:Extended \
-    --era Run2_2017,run2_nanoAOD_106Xv2 \
+    --era Run3_2024 \
     --no_exec \
     --mc \
     --nThreads $MAX_NTHREADS \

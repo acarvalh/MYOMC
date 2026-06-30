@@ -1,0 +1,29 @@
+[
+  {
+    "index": 0,
+    "name": "powheg_ggHH_SMEFT_CHbox_3p36994_CH_m23p7304_CuH_m2p46687_CHG_m0p00561542",
+    "gridpack": "powheg_ggHH_SMEFT_CHbox_3p36994_CH_m23p7304_CuH_m2p46687_CHG_m0p00561542_gridpack.tar.gz",
+    "CHbox": 3.3699425550109607,
+    "CH": -23.730417274243855,
+    "CuH": -2.46687492421741,
+    "CHG": -0.005615420090245281
+  },
+  {
+    "index": 1,
+    "name": "powheg_ggHH_SMEFT_CHbox_m1p97569_CH_m1p25572_CuH_m3p87541_CHG_0p0140593",
+    "gridpack": "powheg_ggHH_SMEFT_CHbox_m1p97569_CH_m1p25572_CuH_m3p87541_CHG_0p0140593_gridpack.tar.gz",
+    "CHbox": -1.975692405561624,
+    "CH": -1.255721783508683,
+    "CuH": -3.875412655051673,
+    "CHG": 0.014059344047515866
+  },
+  {
+    "index": 2,
+    "name": "powheg_ggHH_SMEFT_CHbox_m5p20763_CH_6p01764_CuH_6p65099_CHG_0p0209841",
+    "gridpack": "powheg_ggHH_SMEFT_CHbox_m5p20763_CH_6p01764_CuH_6p65099_CHG_0p0209841_gridpack.tar.gz",
+    "CHbox": -5.2076348346991725,
+    "CH": 6.017635217581583,
+    "CuH": 6.650994020740081,
+    "CHG": 0.02098409962462501
+  }
+]

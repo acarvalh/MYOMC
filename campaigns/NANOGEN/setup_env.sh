@@ -22,12 +22,11 @@ mkdir -pv env
 cd env
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-#export SCRAM_ARCH=slc6_amd64_gcc700
-scram project -n "CMSSW_10_6_32_patch1" CMSSW_10_6_32_patch1
-cd CMSSW_10_6_32_patch1/src
+# el9-native Run 3 release (see run.sh) so the el9 gridpack runs natively.
+export SCRAM_ARCH=el9_amd64_gcc12
+scram project -n "CMSSW_14_1_8" CMSSW_14_1_8
+cd CMSSW_14_1_8/src
 eval `scram runtime -sh`
-#git cms-init
-#git cms-merge-topic DryRun:CMSSW_10_6_22_NANOGEN-NANOGEN
 scram b
 cd ../../
 

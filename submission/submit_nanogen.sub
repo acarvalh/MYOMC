@@ -1,0 +1,48 @@
+# HTCondor submit description for ggHH_SMEFT NANOGEN — one job per (point, jobindex).
+# Five jobs per point (jobindex 1..5) x 20k events = 100k events/point.
+# Conventions mirror the MYOMC csub helper (el9 SingularityImage, x509 proxy).
+#
+# Submit with the driver:  ./submit_nanogen.sh   (it fills the variables below and
+# generates joblist.txt).
+
+universe                = vanilla
+executable              = run_nanogen.sh
+
+# Per-job queue variables: point name, its fragment, and the job index.
+arguments               = $(point) $(jobidx)
+transfer_input_files    = $(fragment), run_nanogen.sh, $(RUN_SH)
+should_transfer_files   = YES
+WhenToTransferOutput    = ON_EXIT_OR_EVICT
+transfer_output_files   = ""
+
+# NANOGEN root files are shipped to EOS by the job itself (xrdcp).
+environment             = "FRAGMENT=$Fnx(fragment) GRIDPACK_DIR=$(GRIDPACK_DIR) OUTPUT_DIR=$(OUTPUT_DIR) RUN_SH=$Fnx(RUN_SH) NEVENTS=$(NEVENTS) NTHREADS=$(NTHREADS)"
+getenv                  = False
+
+# EOS access from the worker node needs a valid grid proxy.
+use_x509userproxy       = True
+
+# Resources — request_cpus MUST equal NTHREADS.
+request_cpus            = $(NTHREADS)
+request_memory          = $(REQUEST_MEM)
+request_disk            = 6GB
+
+# CMSSW_14_1_8 (NANOGEN campaign) is el9-native; the el9 ggHH_SMEFT gridpack
+# (LCG_107 x86_64-el9 pwhg_main) runs natively here. Use the el9 container.
+MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
+
+# Wall-clock budget: 72h queue. lxplus flavours: espresso(20m) microcentury(1h)
+# longlunch(2h) workday(8h) tomorrow(1d) testmatch(3d=72h) nextweek(1w).
++JobFlavour             = "testmatch"
+
+# Per-job logs.
+output                  = logs/$(point).$(jobidx).$(ClusterId).$(ProcId).out
+error                   = logs/$(point).$(jobidx).$(ClusterId).$(ProcId).err
+log                     = logs/nanogen.$(ClusterId).log
+
+# Resubmit-friendly + throttle concurrent materialization at scale.
+periodic_remove         = JobStatus == 5
+max_materialize         = 200
+
+# One job per line of joblist.txt: "point, fragment, jobidx".
+queue point,fragment,jobidx from joblist.txt
