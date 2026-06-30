@@ -59,7 +59,7 @@ generator = cms.EDFilter("Pythia8HadronizerFilter",
         pythia8CP5SettingsBlock,
         pythia8PSweightsSettingsBlock,
         processParameters = cms.vstring(
-            'POWHEG:nFinal = 2',          # gg -> HH: two final-state particles at LHE
+            'POWHEG:nFinal = 2',          # gg -> HH: two final-state particles at LHE{shower_off}
         ),
         parameterSets = cms.vstring('pythia8CommonSettings',
                                     'pythia8CP5Settings',
@@ -71,6 +71,15 @@ generator = cms.EDFilter("Pythia8HadronizerFilter",
 
 ProductionFilterSequence = cms.Sequence(generator)
 '''
+
+# Injected into processParameters when --hard-only: disable the parton shower,
+# multi-parton interactions, beam remnants and hadronization/decays so Pythia
+# only passes the LHE hard process through. The NANOGEN GenPart table then holds
+# just the hard-scattering particles (gg -> HH), and LHEPart is filled from the
+# gridpack LHE regardless. Saves CPU and shrinks the output.
+SHOWER_OFF_BLOCK = """
+            'PartonLevel:all = off',      # hard scattering only: no ISR/FSR/MPI/remnants
+            'HadronLevel:all = off'       # no hadronization or particle decays"""
 
 
 def main():
@@ -94,7 +103,12 @@ def main():
                     help="first point, 1-based inclusive (0 = from the beginning)")
     ap.add_argument("--end", type=int, default=0,
                     help="last point, 1-based inclusive (0 = to the end)")
+    ap.add_argument("--hard-only", action="store_true",
+                    help="store only the hard scattering: disable the Pythia parton "
+                         "shower, MPI and hadronization (PartonLevel/HadronLevel off)")
     args = ap.parse_args()
+
+    shower_off = SHOWER_OFF_BLOCK if args.hard_only else ""
 
     with open(args.points) as f:
         points = json.load(f)
@@ -125,7 +139,8 @@ def main():
             gridpack = "__GRIDPACKPATH__"
             script = "run_generic_tarball_cvmfs.sh"
         body = FRAGMENT_TEMPLATE.format(nevents=args.nevents, comenergy=args.comenergy,
-                                        gridpack=gridpack, script=script)
+                                        gridpack=gridpack, script=script,
+                                        shower_off=shower_off)
         path = os.path.join(args.outdir, name + ".py")
         with open(path, "w") as wf:
             wf.write(body)
@@ -137,7 +152,8 @@ def main():
         json.dump(manifest, f, indent=2)
 
     print(f"Wrote {len(points)} fragments to {args.outdir} "
-          f"(nevents/job={args.nevents}, comEnergy={args.comenergy})")
+          f"(nevents/job={args.nevents}, comEnergy={args.comenergy}"
+          f"{', hard-scattering only (no shower)' if args.hard_only else ''})")
     for m in manifest[:5]:
         print(f"  {m['name']}")
     if len(manifest) > 5:

@@ -14,6 +14,7 @@
 #   ./submit_nanogen.sh --start 4 --end 500 --backend crab   # one CRAB task/point
 #   ./submit_nanogen.sh --ncards 0 --report        # report gridpack/NANOGEN status
 #   ./submit_nanogen.sh --ncards 0 --only-missing  # (re)submit only not-done jobs
+#   ./submit_nanogen.sh --ncards 3 --hard-only     # no Pythia shower: hard scattering only
 #
 # Gridpack gating: a point's jobs are only queued once <point>_gridpack.tar.gz is
 # present in --gridpack-dir (points still waiting for their gridpack are skipped).
@@ -43,6 +44,7 @@ OUTPUT_LFN=/store/user/acarvalh/smeft_nanogen # CRAB Data.outLFNDirBase
 DRYRUN=0
 REPORT=0                                     # --report: only print status, no submit
 ONLY_MISSING=0                               # --only-missing: submit only not-done jobs
+HARD_ONLY=0                                  # --hard-only: no Pythia shower, hard scattering only
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -64,6 +66,7 @@ while [ $# -gt 0 ]; do
     --dry-run)  DRYRUN=1; shift;;
     --report|--status)            REPORT=1; shift;;
     --only-missing|--resubmit-missing) ONLY_MISSING=1; shift;;
+    --hard-only|--no-shower)      HARD_ONLY=1; shift;;
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
@@ -103,15 +106,17 @@ mkdir -p logs "$FRAGDIR"
 #    baked in (--gridpack-base); condor substitutes a local path at runtime.
 GP_BAKE=()
 [ "$BACKEND" = "crab" ] && GP_BAKE=(--gridpack-base "$GRIDPACK_DIR")
+HARD_BAKE=()
+[ "$HARD_ONLY" = "1" ] && { HARD_BAKE=(--hard-only); echo ">> hard-only: Pythia shower/hadronization OFF (hard scattering only)"; }
 rm -f "$FRAGDIR"/*.py "$FRAGDIR"/manifest.json
 if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
   echo ">> generating fragments (points $START..$END) into $FRAGDIR"
   python3 "$HERE/make_fragments.py" --outdir "$FRAGDIR" --start "$START" --end "$END" \
-          --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}"
+          --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
 else
   echo ">> generating fragments (nmax=$NCARDS) into $FRAGDIR"
   python3 "$HERE/make_fragments.py" --outdir "$FRAGDIR" --nmax "$NCARDS" \
-          --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}"
+          --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
 fi
 
 # ----- CRAB backend: one PrivateMC task per point (CRAB splits total/njobs) -----

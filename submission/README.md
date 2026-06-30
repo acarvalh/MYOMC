@@ -93,6 +93,22 @@ Events per job are derived: `events/job = total-events / njobs` (default 100k / 
 | `--flavour`   | `testmatch` | **72h** wall-clock queue |
 | `--gridpack-dir` | `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks` | where the gridpacks live |
 | `--outdir`    | `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen` | NANOGEN output |
+| `--hard-only` (`--no-shower`) | off | **store only the hard scattering** — disable the Pythia shower |
+
+### Hard-scattering only (no parton shower)
+For SMEFT reweighting/templates you often need only the **hard process**, not the
+showered final state. Pass `--hard-only` (alias `--no-shower`) and the per-point
+fragment gets `PartonLevel:all = off` + `HadronLevel:all = off`, so Pythia just
+passes the LHE hard process through — no ISR/FSR, MPI, beam remnants,
+hadronization, or decays:
+```bash
+./submit_nanogen.sh --ncards 3 --hard-only            # condor
+./submit_nanogen.sh --ncards 0 --hard-only --backend crab
+```
+The NANOGEN `GenPart` table then holds only the gg→HH hard-scattering particles,
+and `LHEPart` (filled directly from the gridpack LHE) is present regardless —
+much faster and smaller. The switch lives in the **fragment**, so it applies to
+both backends; combine freely with `--report`/`--only-missing`/range flags.
 
 ## Where the NANOGEN files go
 The output location depends on the backend.
