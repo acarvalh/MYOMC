@@ -15,6 +15,7 @@
 #   ./submit_nanogen.sh --ncards 0 --report        # report gridpack/NANOGEN status
 #   ./submit_nanogen.sh --ncards 0 --only-missing  # (re)submit only not-done jobs
 #   ./submit_nanogen.sh --ncards 3 --hard-only     # no Pythia shower: hard scattering only
+#   ./submit_nanogen.sh --ncards 0 --test          # 1 job x 100 evts, first ready gridpack
 #
 # Gridpack gating: a point's jobs are only queued once <point>_gridpack.tar.gz is
 # present in --gridpack-dir (points still waiting for their gridpack are skipped).
@@ -45,6 +46,7 @@ DRYRUN=0
 REPORT=0                                     # --report: only print status, no submit
 ONLY_MISSING=0                               # --only-missing: submit only not-done jobs
 HARD_ONLY=0                                  # --hard-only: no Pythia shower, hard scattering only
+TEST=0                                        # --test: 1 job x 100 evts on the FIRST ready gridpack
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -67,11 +69,22 @@ while [ $# -gt 0 ]; do
     --report|--status)            REPORT=1; shift;;
     --only-missing|--resubmit-missing) ONLY_MISSING=1; shift;;
     --hard-only|--no-shower)      HARD_ONLY=1; shift;;
+    --test|--smoke)               TEST=1; shift;;
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
 
 case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&2; exit 1;; esac
+
+# --test: quick single-job smoke test on the FIRST gridpack-ready point in the
+# selection. Force 100 events in ONE job, and (below) queue only that one point.
+# Condor-only: CRAB's per-point PrivateMC splitting doesn't fit a 1-job probe.
+if [ "$TEST" = "1" ]; then
+  [ "$BACKEND" = "crab" ] && { echo "--test is HTCondor-only (drop --backend crab)" >&2; exit 1; }
+  TOTAL_EVENTS=100
+  NJOBS_PER_POINT=1
+  echo ">> TEST MODE: 1 job x 100 events on the first ready gridpack in the selection"
+fi
 
 # List basenames of files in a dir/URL (EOS via xrootd, or a local path).
 list_dir_basenames() {
@@ -173,6 +186,8 @@ for frag in "$FRAGDIR"/*.py; do
     fi
   done
   [ "$REPORT" = "1" ] && echo "   [ready]       $point — $pdone/$NJOBS_PER_POINT NANOGEN done"
+  # --test: stop after the first gridpack-ready point (only its single job is queued).
+  [ "$TEST" = "1" ] && { echo ">> TEST MODE: using first ready point $point"; break; }
 done
 echo ">> points: $n_ready gridpack-ready, $n_nogp waiting for gridpack"
 echo ">> NANOGEN jobs in ready points: $n_done done, $n_missing missing"

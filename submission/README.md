@@ -94,6 +94,21 @@ Events per job are derived: `events/job = total-events / njobs` (default 100k / 
 | `--gridpack-dir` | `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks` | where the gridpacks live |
 | `--outdir`    | `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen` | NANOGEN output |
 | `--hard-only` (`--no-shower`) | off | **store only the hard scattering** — disable the Pythia shower |
+| `--test` (`--smoke`) | off | **quick smoke test** — 1 job × 100 events on the first gridpack-ready point |
+
+### Quick smoke test (`--test`)
+`--test` runs a single, cheap NANOGEN job to validate the chain end-to-end. It
+forces `--total-events 100 --njobs 1` and, after listing which gridpacks are
+ready on `--gridpack-dir`, queues **only the first ready point** in the selection
+(condor backend only). Combine with `--start/--end` or `--ncards` to control the
+pool it picks from, and with `--hard-only` to probe the no-shower path:
+```bash
+./submit_nanogen.sh --ncards 0 --test              # first ready gridpack anywhere
+./submit_nanogen.sh --start 4 --end 20 --test      # first ready in points 4..20
+./submit_nanogen.sh --ncards 0 --test --hard-only  # + hard-scattering only
+```
+If no gridpack in the selection is ready yet, it prints `nothing to submit` and
+exits without queuing anything.
 
 ### Hard-scattering only (no parton shower)
 For SMEFT reweighting/templates you often need only the **hard process**, not the

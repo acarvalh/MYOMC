@@ -25,5 +25,23 @@
     "CH": 6.017635217581583,
     "CuH": 6.650994020740081,
     "CHG": 0.02098409962462501
+  },
+  {
+    "index": 3,
+    "name": "powheg_ggHH_SMEFT_CHbox_2p40586_CH_m12p6565_CuH_m1p32303_CHG_m0p00131494",
+    "gridpack": "powheg_ggHH_SMEFT_CHbox_2p40586_CH_m12p6565_CuH_m1p32303_CHG_m0p00131494_gridpack.tar.gz",
+    "CHbox": 2.4058620645660045,
+    "CH": -12.656453007075111,
+    "CuH": -1.3230339910748925,
+    "CHG": -0.0013149395726356062
+  },
+  {
+    "index": 4,
+    "name": "powheg_ggHH_SMEFT_CHbox_m3p35112_CH_13p1474_CuH_1p6316_CHG_0p0286498",
+    "gridpack": "powheg_ggHH_SMEFT_CHbox_m3p35112_CH_13p1474_CuH_1p6316_CHG_0p0286498_gridpack.tar.gz",
+    "CHbox": -3.351115021705804,
+    "CH": 13.147405741986681,
+    "CuH": 1.6315962907884647,
+    "CHG": 0.028649791315877023
   }
 ]

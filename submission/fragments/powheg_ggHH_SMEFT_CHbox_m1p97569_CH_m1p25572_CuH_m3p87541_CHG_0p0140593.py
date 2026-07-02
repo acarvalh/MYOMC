@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 # POWHEG ggHH_SMEFT gridpack for this parameter point.
 externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
     args = cms.vstring('__GRIDPACKPATH__'),
-    nEvents = cms.untracked.uint32(20000),
+    nEvents = cms.untracked.uint32(100),
     numberOfParameters = cms.uint32(1),
     outputFile = cms.string('cmsgrid_final.lhe'),
     generateConcurrently = cms.untracked.bool(False),
