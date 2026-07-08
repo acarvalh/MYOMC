@@ -236,7 +236,11 @@ if [ "$DRYRUN" != "1" ]; then
 fi
 
 # 5) Submit (or dry-run).
-REQUEST_MEM="${MEM}M"
+# Bare integer = megabytes. NOT "${MEM}M": passed through the REQUEST_MEM submit
+# macro, condor parses the value as an expression and the "M" reads as an undefined
+# variable -> "Parse error in expression: RequestMEM = 4000M". (request_memory as a
+# direct command understands units, but the macro indirection does not.)
+REQUEST_MEM="${MEM}"
 SUBMIT_ARGS=(
   -append "GRIDPACK_DIR=$GRIDPACK_DIR"
   -append "OUTPUT_DIR=$OUTPUT_DIR"
