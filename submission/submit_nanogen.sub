@@ -24,7 +24,7 @@ use_x509userproxy       = True
 
 # Resources — request_cpus MUST equal NTHREADS.
 request_cpus            = $(NTHREADS)
-request_memory          = $(REQUEST_MEM)
+request_memory          = $(NANOGEN_MEM_MB)
 request_disk            = 6GB
 
 # CMSSW_14_1_8 (NANOGEN campaign) is el9-native; the el9 ggHH_SMEFT gridpack

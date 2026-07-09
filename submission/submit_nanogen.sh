@@ -236,18 +236,19 @@ if [ "$DRYRUN" != "1" ]; then
 fi
 
 # 5) Submit (or dry-run).
-# Bare integer = megabytes. NOT "${MEM}M": passed through the REQUEST_MEM submit
-# macro, condor parses the value as an expression and the "M" reads as an undefined
-# variable -> "Parse error in expression: RequestMEM = 4000M". (request_memory as a
-# direct command understands units, but the macro indirection does not.)
-REQUEST_MEM="${MEM}"
+# Memory in bare megabytes (no "M" suffix). The macro must NOT be named request_* :
+# HTCondor reads any `request_<x>` submit command as a CUSTOM RESOURCE request, so a
+# macro called REQUEST_MEM made condor invent a resource "MEM" (RequestMEM=4000) and
+# inject `TARGET.MEM >= RequestMEM` into Requirements. No worker advertises MEM, so
+# the job matched 0 slots and sat idle forever. NANOGEN_MEM_MB dodges that prefix.
+NANOGEN_MEM_MB="${MEM}"
 SUBMIT_ARGS=(
   -append "GRIDPACK_DIR=$GRIDPACK_DIR"
   -append "OUTPUT_DIR=$OUTPUT_DIR"
   -append "RUN_SH=$RUN_SH"
   -append "NEVENTS=$NEVENTS"
   -append "NTHREADS=$NTHREADS"
-  -append "REQUEST_MEM=$REQUEST_MEM"
+  -append "NANOGEN_MEM_MB=$NANOGEN_MEM_MB"
   -append "request_cpus=$NTHREADS"
   -append "+JobFlavour=\"$FLAVOUR\""
 )
