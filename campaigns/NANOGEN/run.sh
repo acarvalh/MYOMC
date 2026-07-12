@@ -43,7 +43,27 @@ else
     MAX_NTHREADS=$5
 fi
 
-RSEED=$((JOBINDEX * MAX_NTHREADS * 100 + 1001)) # Space out seeds; Madgraph concurrent mode adds idx(thread) to random seed
+# Per-(point,job) seed. PREFERRED: submit_nanogen.sh precomputes RSEED_BASE, the
+# lower edge of a disjoint 1000-wide seed window reserved for this exact (point,
+# global-job) pair — base = point_index*100000 + gjob*1000, where point_index is
+# the UNIQUE JSON index (no hash collisions) and gjob = job_offset + jobidx (so
+# top-up batches use fresh windows). Inside the window, seeds never overlap another
+# job's: LHE = base+1, Pythia = base+2, POWHEG per-core streams = base+10+i (set in
+# runcmsgrid.sh from the LHE seed). Windows are disjoint => globally collision-free,
+# including across resubmissions. Max seed (index<9000, gjob<100) stays < 900000000,
+# the CMS RandomNumberGeneratorService / Pythia8 ceiling.
+#
+# FALLBACK (RSEED_BASE unset, e.g. a standalone gridpack run): the old self-contained
+# hash layout, RSEED = crc32(point)%8e6 *100 + JOBINDEX*10 + 1, Pythia = RSEED+7.
+if [ -n "${RSEED_BASE:-}" ]; then
+    RSEED=$(( RSEED_BASE + 1 ))    # externalLHEProducer (POWHEG); runcmsgrid derives cores as +10+i
+    PYSEED=$(( RSEED_BASE + 2 ))   # Pythia8 generator
+else
+    POINT_NAME="${NAME%_*}"
+    POINT_SEED=$(python3 -c "import sys,zlib; print(zlib.crc32(sys.argv[1].encode()) % 8000000)" "$POINT_NAME")
+    RSEED=$(( POINT_SEED * 100 + JOBINDEX * 10 + 1 ))
+    PYSEED=$(( RSEED + 7 ))
+fi
 
 
 echo "Fragment=$FRAGMENT"
@@ -103,8 +123,7 @@ cmsDriver.py Configuration/GenProduction/python/fragment.py \
     --nThreads $MAX_NTHREADS \
     --customise_commands "process.source.numberEventsInLuminosityBlock=cms.untracked.uint32(1000)\\n\
 process.RandomNumberGeneratorService.externalLHEProducer.initialSeed=${RSEED}\\n\
-process.genParticleTable.variables.mass.precision=cms.untracked.int32(-1)\\n\
-process.genJetTable.variables.mass.precision=cms.untracked.int32(-1)\\n" \
+process.RandomNumberGeneratorService.generator.initialSeed=${PYSEED}\\n" \
     -n $NEVENTS
 
 cmsRun "NANOGEN_${NAME}_cfg.py"

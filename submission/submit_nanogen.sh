@@ -30,14 +30,35 @@ NCARDS=3                                    # how many points (0 = all); ignored
 START=0                                     # first point, 1-based inclusive (0 = beginning)
 END=0                                       # last point, 1-based inclusive (0 = end)
 FRAGDIR=$HERE/fragments                      # where generated fragments go
-GRIDPACK_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks
+GRIDPACK_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
 OUTPUT_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
 RUN_SH=$MYOMC/campaigns/NANOGEN/run.sh
-TOTAL_EVENTS=100000                          # total events per point
-NJOBS_PER_POINT=5                            # jobs per point (events/job = total/njobs)
+GENBASE=$(cd "$MYOMC/.." && pwd)             # generation_k4 root
+# Fix-files shipped into every job so run_nanogen.sh can self-heal the staged
+# gridpack (older assemblies shipped WITHOUT creategrid.py and with an unpatched
+# runcmsgrid.sh). Both are generic (point-independent) and physics-neutral.
+CREATEGRID_PY=${CREATEGRID_PY:-$GENBASE/POWHEG-BOX/ggHH_SMEFT/Virtual/creategrid.py}
+FIXED_RUNCMSGRID=${FIXED_RUNCMSGRID:-$GENBASE/condor/runcmsgrid.sh}
+TOTAL_EVENTS=50000                           # total events/point (5 jobs x 10k)
+NJOBS_PER_POINT=5                            # jobs per point (events/job = total/njobs = 10k)
+JOB_OFFSET=0                                  # add to jobidx -> global job number gjob (for COLLISION-FREE
+                                              # top-ups: a second batch of N jobs uses --job-offset <already-done>
+                                              # so it gets fresh seed windows AND fresh output filenames).
+# Seed-window geometry (keep in sync with campaigns/NANOGEN/run.sh + condor/runcmsgrid.sh):
+# each (point,gjob) owns a disjoint window [base, base+JOB_STRIDE), base = index*POINT_STRIDE
+# + gjob*JOB_STRIDE. index = UNIQUE JSON index (no hash collisions). All seeds inside the
+# window (LHE base+1, Pythia base+2, cores base+10+i) => globally collision-free. Ceiling:
+# (MAXP-1)*POINT_STRIDE + (JOB_STRIDE geometry) < 900000000 (CMS/Pythia8 RNG limit).
+POINT_STRIDE=100000                           # seed span reserved per point (room for up to 99 gjobs)
+JOB_STRIDE=1000                               # seed span reserved per (point,gjob) window
+MAXP=9000                                     # max supported JSON index (9000*100000 = 9e8 ceiling)
 COMENERGY=13600                              # Run 3 centre-of-mass energy (GeV)
-NTHREADS=1                                   # cmsRun threads (== request_cpus)
-MEM=4000                                     # request_memory (MB)
+# NTHREADS flows through as ncpu to the gridpack's runcmsgrid.sh (via
+# run_generic_tarball_cvmfs.sh), which now runs that many parallel POWHEG streams
+# (~Nx wall speedup; gg->HH is ~11 CPU-s/event). Also = request_cpus and cmsRun
+# --nThreads. 10k events / 4 streams ~= 2500 evt/stream x 11s ~= 7.6h + build.
+NTHREADS=4                                   # parallel POWHEG streams == request_cpus
+MEM=8000                                     # request_memory (MB); ~4 pwhg_main + cmsRun
 FLAVOUR=testmatch                            # 72h queue (condor backend)
 BACKEND=condor                               # condor | crab
 STORAGE_SITE=T3_CH_CERNBOX                   # CRAB Site.storageSite (T3_CH_CERNBOX = /eos/user)
@@ -45,7 +66,7 @@ OUTPUT_LFN=/store/user/acarvalh/smeft_nanogen # CRAB Data.outLFNDirBase
 DRYRUN=0
 REPORT=0                                     # --report: only print status, no submit
 ONLY_MISSING=0                               # --only-missing: submit only not-done jobs
-HARD_ONLY=0                                  # --hard-only: no Pythia shower, hard scattering only
+HARD_ONLY=1                                  # DEFAULT: hard scattering only (no Pythia shower). Use --with-shower to enable shower/hadronization.
 TEST=0                                        # --test: 1 job x 100 evts on the FIRST ready gridpack
 
 while [ $# -gt 0 ]; do
@@ -57,6 +78,7 @@ while [ $# -gt 0 ]; do
     --gridpack-dir) GRIDPACK_DIR=$2; shift 2;;
     --outdir)   OUTPUT_DIR=$2; shift 2;;
     --njobs)    NJOBS_PER_POINT=$2; shift 2;;
+    --job-offset) JOB_OFFSET=$2; shift 2;;
     --total-events) TOTAL_EVENTS=$2; shift 2;;
     --comenergy) COMENERGY=$2; shift 2;;
     --nthreads) NTHREADS=$2; shift 2;;
@@ -69,6 +91,7 @@ while [ $# -gt 0 ]; do
     --report|--status)            REPORT=1; shift;;
     --only-missing|--resubmit-missing) ONLY_MISSING=1; shift;;
     --hard-only|--no-shower)      HARD_ONLY=1; shift;;
+    --with-shower|--shower)       HARD_ONLY=0; shift;;   # opt back INTO Pythia shower/hadronization
     --test|--smoke)               TEST=1; shift;;
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
@@ -108,6 +131,20 @@ if [ $(( TOTAL_EVENTS % NJOBS_PER_POINT )) -ne 0 ]; then
 fi
 NEVENTS=$(( TOTAL_EVENTS / NJOBS_PER_POINT ))
 echo ">> $TOTAL_EVENTS events/point = $NJOBS_PER_POINT jobs x $NEVENTS events"
+
+# Seed-window guards: the highest global job for this batch must fit inside a point's
+# reserved POINT_STRIDE, and the reserved cores (base+10+NTHREADS) inside JOB_STRIDE.
+MAX_GJOB=$(( JOB_OFFSET + NJOBS_PER_POINT ))
+if [ "$JOB_OFFSET" -lt 0 ]; then echo "--job-offset must be >= 0" >&2; exit 1; fi
+if [ $(( MAX_GJOB * JOB_STRIDE )) -ge "$POINT_STRIDE" ]; then
+  echo "ERROR: job-offset+njobs ($MAX_GJOB) exceeds the per-point window (max $(( POINT_STRIDE / JOB_STRIDE - 1 )) global jobs)." >&2
+  exit 1
+fi
+if [ $(( 10 + NTHREADS )) -ge "$JOB_STRIDE" ]; then
+  echo "ERROR: NTHREADS ($NTHREADS) too large for the per-(point,job) seed window (JOB_STRIDE=$JOB_STRIDE)." >&2
+  exit 1
+fi
+[ "$JOB_OFFSET" -gt 0 ] && echo ">> job-offset $JOB_OFFSET: this batch uses global jobs $(( JOB_OFFSET + 1 ))..$MAX_GJOB (fresh seed windows + output names)"
 
 cd "$HERE"
 mkdir -p logs "$FRAGDIR"
@@ -159,8 +196,17 @@ declare -A NANO_DONE=()
 while IFS= read -r f; do [ -n "$f" ] && NANO_DONE["$f"]=1; done \
   < <(list_dir_basenames "$OUTPUT_DIR" | grep '^NANOGEN_.*\.root$' || true)
 
-# 2) Build joblist.txt: one line per (point, jobindex), gated on gridpack
-#    readiness and (for --report/--only-missing) per-job NANOGEN completion.
+# Map each point name -> its UNIQUE JSON index (from make_fragments' manifest). This
+# index seeds the collision-free windows (base = index*POINT_STRIDE + gjob*JOB_STRIDE),
+# so distinct points can never share a seed the way a crc32 hash occasionally could.
+declare -A PIDX=()
+while IFS=$'\t' read -r nm idx; do [ -n "$nm" ] && PIDX["$nm"]=$idx; done \
+  < <(python3 -c "import json,sys
+for m in json.load(open(sys.argv[1])): print(m['name']+'\t'+str(m['index']))" "$FRAGDIR/manifest.json")
+
+# 2) Build joblist.txt: one line per (point, gjob) = "point, fragment, gjob, rbase",
+#    gated on gridpack readiness and (for --report/--only-missing) NANOGEN completion.
+#    gjob = JOB_OFFSET + jobidx (global job number); rbase = precomputed seed-window base.
 : > joblist.txt
 n_ready=0; n_nogp=0; n_done=0; n_missing=0
 for frag in "$FRAGDIR"/*.py; do
@@ -173,16 +219,21 @@ for frag in "$FRAGDIR"/*.py; do
   fi
   n_ready=$((n_ready + 1))
   pdone=0
+  pidx=${PIDX[$point]:-}
+  if [ -z "$pidx" ]; then echo "ERROR: no JSON index for $point in manifest" >&2; exit 1; fi
+  if [ "$pidx" -ge "$MAXP" ]; then echo "ERROR: point index $pidx >= $MAXP (seed ceiling) for $point" >&2; exit 1; fi
   for j in $(seq 1 "$NJOBS_PER_POINT"); do
-    if [ -n "${NANO_DONE[NANOGEN_${point}_${j}.root]:-}" ]; then
+    gjob=$(( JOB_OFFSET + j ))                              # global job number: seed + output discriminator
+    rbase=$(( pidx * POINT_STRIDE + gjob * JOB_STRIDE ))    # lower edge of this (point,gjob) seed window
+    if [ -n "${NANO_DONE[NANOGEN_${point}_${gjob}.root]:-}" ]; then
       n_done=$((n_done + 1)); pdone=$((pdone + 1))
       # full resubmit re-queues done jobs; --only-missing / --report drop them
       if [ "$REPORT" != "1" ] && [ "$ONLY_MISSING" != "1" ]; then
-        printf '%s, %s, %d\n' "$point" "$frag" "$j" >> joblist.txt
+        printf '%s, %s, %d, %d\n' "$point" "$frag" "$gjob" "$rbase" >> joblist.txt
       fi
     else
       n_missing=$((n_missing + 1))
-      [ "$REPORT" != "1" ] && printf '%s, %s, %d\n' "$point" "$frag" "$j" >> joblist.txt
+      [ "$REPORT" != "1" ] && printf '%s, %s, %d, %d\n' "$point" "$frag" "$gjob" "$rbase" >> joblist.txt
     fi
   done
   [ "$REPORT" = "1" ] && echo "   [ready]       $point — $pdone/$NJOBS_PER_POINT NANOGEN done"
@@ -242,10 +293,16 @@ fi
 # inject `TARGET.MEM >= RequestMEM` into Requirements. No worker advertises MEM, so
 # the job matched 0 slots and sat idle forever. NANOGEN_MEM_MB dodges that prefix.
 NANOGEN_MEM_MB="${MEM}"
+# Preflight: the self-heal fix-files must exist to be shipped into the jobs.
+for f in "$CREATEGRID_PY" "$FIXED_RUNCMSGRID"; do
+  [ -f "$f" ] || { echo "ERROR: fix-file missing: $f" >&2; exit 1; }
+done
 SUBMIT_ARGS=(
   -append "GRIDPACK_DIR=$GRIDPACK_DIR"
   -append "OUTPUT_DIR=$OUTPUT_DIR"
   -append "RUN_SH=$RUN_SH"
+  -append "CREATEGRID_PY=$CREATEGRID_PY"
+  -append "FIXED_RUNCMSGRID=$FIXED_RUNCMSGRID"
   -append "NEVENTS=$NEVENTS"
   -append "NTHREADS=$NTHREADS"
   -append "NANOGEN_MEM_MB=$NANOGEN_MEM_MB"

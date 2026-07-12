@@ -78,8 +78,9 @@ seed). The gridpacks must be reachable via xrootd from grid worker nodes.
 ### Key options (defaults)
 | flag | default | meaning |
 |------|---------|---------|
-| `--total-events` | `100000` | **total events per point** |
+| `--total-events` | `50000` | **total events per point** |
 | `--njobs`     | `5`      | jobs per point |
+| `--job-offset` | `0`     | add to jobidx → **global job number** for **collision-free top-ups** (see below) |
 | `--comenergy` | `13600`  | √s in GeV (Run 3) |
 
 Events per job are derived: `events/job = total-events / njobs` (default 100k / 5
@@ -95,6 +96,38 @@ Events per job are derived: `events/job = total-events / njobs` (default 100k / 
 | `--outdir`    | `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen` | NANOGEN output |
 | `--hard-only` (`--no-shower`) | off | **store only the hard scattering** — disable the Pythia shower |
 | `--test` (`--smoke`) | off | **quick smoke test** — 1 job × 100 events on the first gridpack-ready point |
+
+### Seeds — collision-free by construction, and how to add statistics later
+Every RNG seed is a deterministic function of the point's **unique JSON index** and a
+**global job number** `gjob = --job-offset + jobidx`. Each `(point, gjob)` owns a
+**disjoint 1000-wide seed window** computed in the driver and passed to the job as
+`RSEED_BASE`:
+```
+RSEED_BASE = point_index*100000 + gjob*1000        # lower edge of the window
+externalLHEProducer.initialSeed = RSEED_BASE + 1   # POWHEG (LHE)
+generator.initialSeed           = RSEED_BASE + 2   # Pythia8
+POWHEG per-core stream i        = RSEED_BASE + 10 + i   # set in condor/runcmsgrid.sh
+```
+Because the windows never overlap, **no two (point, job, core) or Pythia seeds can ever
+collide** — across points, across the N parallel POWHEG streams, and across resubmissions.
+Using the JSON *index* (not a `crc32` hash) removes the last residual point-collision
+chance. Ceiling: index < 9000 and gjob < 100 keep every seed `< 9e8` (the CMS
+`RandomNumberGeneratorService` / Pythia8 limit); the driver **guards** both bounds.
+
+**⚠️ Re-running the same `gjob` reproduces the identical events** (the seed is fully
+deterministic). That is exactly what you want for `--only-missing` (regenerate a failed
+job identically), but it means you must **not** naively resubmit to *add* statistics.
+
+**To add more events to points that already have jobs `1..N`,** give the new batch a
+`--job-offset` of `N` so it uses fresh `gjob = N+1 …` — fresh seed windows **and** fresh
+output filenames (`NANOGEN_<point>_<gjob>.root`), so nothing is overwritten or duplicated:
+```bash
+# initial 50k/point in 5 jobs (gjob 1..5)
+./submit_nanogen.sh --start 1701 --end 2500
+# later: +40k/point in 4 more jobs (gjob 6..9), collision-free
+./submit_nanogen.sh --start 1701 --end 2500 --job-offset 5 --njobs 4 --total-events 40000
+```
+Keep total jobs/point ≤ 99. (CRAB backend seeds itself and ignores `--job-offset`.)
 
 ### Quick smoke test (`--test`)
 `--test` runs a single, cheap NANOGEN job to validate the chain end-to-end. It
@@ -133,10 +166,12 @@ Each job xrdcp's its file (from `run_nanogen.sh`) to **`--outdir`**, default:
 ```
 root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen/
 ```
-Filename: `NANOGEN_<point>_<jobidx>.root` — i.e. **5 files per point** (one per
-job), flat in that directory. E.g.:
+Files are delivered into a **per-point subfolder**, named by the global job number
+`gjob` (= `--job-offset + jobidx`): `<point>/NANOGEN_<point>_<gjob>.root`. E.g. the
+default 5 jobs give `..._1.root … _5.root`, and a `--job-offset 5` top-up adds
+`..._6.root …` alongside them without overwriting:
 ```
-/eos/user/a/acarvalh/smeft_nanogen/NANOGEN_powheg_ggHH_SMEFT_CHbox_..._CHG_..._5.root
+/eos/user/a/acarvalh/smeft_nanogen/<point>/NANOGEN_<point>_5.root
 ```
 Override with `--outdir` (an xrootd URL, an `/eos/...` path, or a local dir).
 
@@ -166,8 +201,10 @@ group store instead.
 - **Grid proxy**: the driver ensures a 72h `x509up` proxy (`$HOME/private/x509up`),
   and jobs run with `use_x509userproxy = True`, needed to xrdcp gridpacks from /
   NANOGEN to EOS.
-- **Per-job seeds**: `run.sh` derives the RNG seed from the job index, so the 5
-  jobs of a point produce statistically independent events.
+- **Per-job seeds**: the driver assigns each `(point, gjob)` a disjoint seed window
+  (`RSEED_BASE`, see *Seeds* above), so all jobs, POWHEG streams and Pythia seeds are
+  statistically independent and **globally collision-free**, including across top-up
+  batches submitted with `--job-offset`.
 - A job fails loudly (exit 42) if no `*NANOGEN*.root` is produced, exit 43 if the
   gridpack path token wasn't substituted — resubmit those.
 - `max_materialize = 200` throttles concurrency at scale (2485 jobs for 4..500).

@@ -20,7 +20,7 @@ import os
 
 # Same coefficients and filename encoding as makeSMEFTCards.py, so a fragment's
 # name matches its gridpack: <point>.py  <->  <point>_gridpack.tar.gz
-COEFFS = ["CHbox", "CH", "CuH", "CHG"]
+COEFFS = ["CHbox", "CH", "CuH", "CHG", "CtG"]
 
 
 def frmt(value):
@@ -78,8 +78,14 @@ ProductionFilterSequence = cms.Sequence(generator)
 # just the hard-scattering particles (gg -> HH), and LHEPart is filled from the
 # gridpack LHE regardless. Saves CPU and shrinks the output.
 SHOWER_OFF_BLOCK = """
-            'PartonLevel:all = off',      # hard scattering only: no ISR/FSR/MPI/remnants
+            'PartonLevel:ISR = off',      # no initial-state radiation
+            'PartonLevel:FSR = off',      # no final-state radiation (parton shower)
+            'PartonLevel:MPI = off',      # no multi-parton interactions
             'HadronLevel:all = off'       # no hadronization or particle decays"""
+# NOTE: do NOT use 'PartonLevel:all = off' — it leaves Pythia8HadronizerFilter with an
+# incomplete event record and SEGFAULTS during HepMC conversion. Turning off the shower
+# COMPONENTS (ISR/FSR/MPI) + HadronLevel keeps the framework alive and yields the hard
+# partons only, which is what we want for a hard-scattering-only NANOGEN sample.
 
 
 def main():
@@ -87,7 +93,7 @@ def main():
     gendir = os.path.abspath(os.path.join(here, "..", ".."))  # .../generation_k4
     ap = argparse.ArgumentParser()
     ap.add_argument("--points",
-                    default=os.path.join(gendir, "FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json"))
+                    default="/eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json")
     ap.add_argument("--outdir", default=os.path.join(here, "fragments"))
     ap.add_argument("--nevents", type=int, default=20000,
                     help="events per job (ExternalLHEProducer.nEvents)")

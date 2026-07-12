@@ -8,15 +8,18 @@
 universe                = vanilla
 executable              = run_nanogen.sh
 
-# Per-job queue variables: point name, its fragment, and the job index.
-arguments               = $(point) $(jobidx)
-transfer_input_files    = $(fragment), run_nanogen.sh, $(RUN_SH)
+# Per-job queue variables: point name, its fragment, the global job number gjob
+# (= job_offset + jobidx; seed + output discriminator) and rbase (the precomputed
+# lower edge of this (point,gjob) disjoint seed window, exported as RSEED_BASE).
+arguments               = $(point) $(gjob)
+transfer_input_files    = $(fragment), run_nanogen.sh, $(RUN_SH), $(CREATEGRID_PY), $(FIXED_RUNCMSGRID)
 should_transfer_files   = YES
 WhenToTransferOutput    = ON_EXIT_OR_EVICT
 transfer_output_files   = ""
 
-# NANOGEN root files are shipped to EOS by the job itself (xrdcp).
-environment             = "FRAGMENT=$Fnx(fragment) GRIDPACK_DIR=$(GRIDPACK_DIR) OUTPUT_DIR=$(OUTPUT_DIR) RUN_SH=$Fnx(RUN_SH) NEVENTS=$(NEVENTS) NTHREADS=$(NTHREADS)"
+# NANOGEN root files are shipped to EOS by the job itself (xrdcp). RSEED_BASE gives
+# run.sh the collision-free seed window for this exact (point,gjob).
+environment             = "FRAGMENT=$Fnx(fragment) GRIDPACK_DIR=$(GRIDPACK_DIR) OUTPUT_DIR=$(OUTPUT_DIR) RUN_SH=$Fnx(RUN_SH) CREATEGRID_PY=$Fnx(CREATEGRID_PY) FIXED_RUNCMSGRID=$Fnx(FIXED_RUNCMSGRID) NEVENTS=$(NEVENTS) NTHREADS=$(NTHREADS) RSEED_BASE=$(rbase)"
 getenv                  = False
 
 # EOS access from the worker node needs a valid grid proxy.
@@ -36,13 +39,13 @@ MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw
 +JobFlavour             = "testmatch"
 
 # Per-job logs.
-output                  = logs/$(point).$(jobidx).$(ClusterId).$(ProcId).out
-error                   = logs/$(point).$(jobidx).$(ClusterId).$(ProcId).err
+output                  = logs/$(point).$(gjob).$(ClusterId).$(ProcId).out
+error                   = logs/$(point).$(gjob).$(ClusterId).$(ProcId).err
 log                     = logs/nanogen.$(ClusterId).log
 
 # Resubmit-friendly + throttle concurrent materialization at scale.
 periodic_remove         = JobStatus == 5
-max_materialize         = 200
+max_materialize         = 500
 
-# One job per line of joblist.txt: "point, fragment, jobidx".
-queue point,fragment,jobidx from joblist.txt
+# One job per line of joblist.txt: "point, fragment, gjob, rbase".
+queue point,fragment,gjob,rbase from joblist.txt
