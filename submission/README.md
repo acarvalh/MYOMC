@@ -86,9 +86,26 @@ seed). The gridpacks must be reachable via xrootd from grid worker nodes.
 > `--job-offset`** (see *Seeds* above) — its disjoint index-based windows are
 > collision-free across resubmissions; CRAB ignores `--job-offset`.
 
+### Grid selection: 4D vs 5D
+
+`--grid {4d,5d}` picks which **bundled** points grid drives fragment names **and** the
+matching default gridpack set (they are paired — a fragment name must equal its gridpack
+name). `4d` = leading-only (no CtG, names omit `_CtG_`); `5d` = leading + CtG. Override
+the JSON with `--points <file>` or the gridpack set with `--gridpack-dir <dir>`.
+
+| `--grid` | bundled points JSON | default gridpack dir |
+|---|---|---|
+| `4d` | `FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json` | `…/smeft_gridpacks_keep_stage1` |
+| `5d` (default) | `FINALgrid_for_SMEFT_5D_leading_plus_ctg.json` | `…/smeft_gridpacks_5param_keep_stage1` |
+
+For a minimal single-job smoke test on a landed 4D gridpack, see
+[`README_CANARY.md`](README_CANARY.md).
+
 ### Key options (defaults)
 | flag | default | meaning |
 |------|---------|---------|
+| `--grid` | `5d` | `4d` or `5d`: bundled points grid + matching default gridpack set |
+| `--points` | (from `--grid`) | explicit points JSON, overrides `--grid` |
 | `--total-events` | `50000` | **total events per point** |
 | `--njobs`     | `5`      | jobs per point |
 | `--job-offset` | `0`     | add to jobidx → **global job number** for **collision-free top-ups** (see below) |

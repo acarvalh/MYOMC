@@ -29,7 +29,11 @@ def frmt(value):
 
 
 def point_name(point):
-    return "powheg_ggHH_SMEFT_" + "_".join(f"{k}_{frmt(point[k])}" for k in COEFFS)
+    # Include only the coefficients present in the point: a 5D grid point carries all
+    # of COEFFS (…_CtG_…); a 4D grid point has no CtG key, so its name omits _CtG_ and
+    # matches the 4D gridpack filenames. Same encoding as makeSMEFTCards.py.
+    return "powheg_ggHH_SMEFT_" + "_".join(
+        f"{k}_{frmt(point[k])}" for k in COEFFS if k in point)
 
 
 FRAGMENT_TEMPLATE = '''import FWCore.ParameterSet.Config as cms
@@ -90,10 +94,11 @@ SHOWER_OFF_BLOCK = """
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
-    gendir = os.path.abspath(os.path.join(here, "..", ".."))  # .../generation_k4
     ap = argparse.ArgumentParser()
+    # Default points grid is BUNDLED beside this script so a fresh MYOMC clone can
+    # generate fragments with no reach into EOS / the external generation_k4 tree.
     ap.add_argument("--points",
-                    default="/eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json")
+                    default=os.path.join(here, "FINALgrid_for_SMEFT_5D_leading_plus_ctg.json"))
     ap.add_argument("--outdir", default=os.path.join(here, "fragments"))
     ap.add_argument("--nevents", type=int, default=20000,
                     help="events per job (ExternalLHEProducer.nEvents)")
@@ -152,7 +157,7 @@ def main():
             wf.write(body)
         manifest.append({"index": i, "name": name,
                          "gridpack": name + "_gridpack.tar.gz",
-                         **{k: point[k] for k in COEFFS}})
+                         **{k: point[k] for k in COEFFS if k in point}})
 
     with open(os.path.join(args.outdir, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

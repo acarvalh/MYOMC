@@ -1,0 +1,8 @@
+# Generated at submit time — do not commit.
+fragments/
+joblist.txt
+logs/
+cfgs/
+crabConfigs/
+crab_nanogen/
+crab_env/

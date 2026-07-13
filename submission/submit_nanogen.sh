@@ -30,15 +30,23 @@ NCARDS=3                                    # how many points (0 = all); ignored
 START=0                                     # first point, 1-based inclusive (0 = beginning)
 END=0                                       # last point, 1-based inclusive (0 = end)
 FRAGDIR=$HERE/fragments                      # where generated fragments go
-GRIDPACK_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
+# Grid selection: --grid picks which BUNDLED points JSON drives fragment names AND the
+# matching default gridpack set. 4d = leading-only (no CtG, names omit _CtG_); 5d =
+# leading + CtG. Fragment names must match the gridpack names, so the two are paired.
+GRID=5d                                      # 4d | 5d
+POINTS=""                                    # explicit points JSON; overrides --grid
+GPDIR_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
+GPDIR_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1
+GRIDPACK_DIR=""                              # empty => derive from --grid; --gridpack-dir overrides
 OUTPUT_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
 RUN_SH=$MYOMC/campaigns/NANOGEN/run.sh
-GENBASE=$(cd "$MYOMC/.." && pwd)             # generation_k4 root
 # Fix-files shipped into every job so run_nanogen.sh can self-heal the staged
 # gridpack (older assemblies shipped WITHOUT creategrid.py and with an unpatched
-# runcmsgrid.sh). Both are generic (point-independent) and physics-neutral.
-CREATEGRID_PY=${CREATEGRID_PY:-$GENBASE/POWHEG-BOX/ggHH_SMEFT/Virtual/creategrid.py}
-FIXED_RUNCMSGRID=${FIXED_RUNCMSGRID:-$GENBASE/condor/runcmsgrid.sh}
+# runcmsgrid.sh). Both are generic (point-independent) and physics-neutral, and are
+# BUNDLED in this repo (beside this script) so a fresh MYOMC clone is self-contained
+# — no reach into the external generation_k4 / POWHEG-BOX tree. Override if needed.
+CREATEGRID_PY=${CREATEGRID_PY:-$HERE/creategrid.py}
+FIXED_RUNCMSGRID=${FIXED_RUNCMSGRID:-$HERE/runcmsgrid.sh}
 TOTAL_EVENTS=50000                           # total events/point (5 jobs x 10k)
 NJOBS_PER_POINT=5                            # jobs per point (events/job = total/njobs = 10k)
 JOB_OFFSET=0                                  # add to jobidx -> global job number gjob (for COLLISION-FREE
@@ -76,6 +84,8 @@ while [ $# -gt 0 ]; do
     --end)      END=$2; shift 2;;
     --fragdir)  FRAGDIR=$2; shift 2;;
     --gridpack-dir) GRIDPACK_DIR=$2; shift 2;;
+    --grid)     GRID=$2; shift 2;;
+    --points)   POINTS=$2; shift 2;;
     --outdir)   OUTPUT_DIR=$2; shift 2;;
     --njobs)    NJOBS_PER_POINT=$2; shift 2;;
     --job-offset) JOB_OFFSET=$2; shift 2;;
@@ -98,6 +108,19 @@ while [ $# -gt 0 ]; do
 done
 
 case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&2; exit 1;; esac
+
+# Resolve the grid selection into a bundled points JSON + default gridpack set. An
+# explicit --points / --gridpack-dir overrides the derived default. Fragment names are
+# built from $POINTS (see make_fragments.py), so $POINTS must match $GRIDPACK_DIR.
+case "$GRID" in
+  4d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json; GRID_GPDIR=$GPDIR_4D;;
+  5d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json;        GRID_GPDIR=$GPDIR_5D;;
+  *)  echo "--grid must be 4d or 5d" >&2; exit 1;;
+esac
+[ -n "$POINTS" ]       || POINTS=$GRID_JSON
+[ -n "$GRIDPACK_DIR" ] || GRIDPACK_DIR=$GRID_GPDIR
+[ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
+echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR"
 
 # --test: quick single-job smoke test on the FIRST gridpack-ready point in the
 # selection. Force 100 events in ONE job, and (below) queue only that one point.
@@ -161,11 +184,11 @@ HARD_BAKE=()
 rm -f "$FRAGDIR"/*.py "$FRAGDIR"/manifest.json
 if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
   echo ">> generating fragments (points $START..$END) into $FRAGDIR"
-  python3 "$HERE/make_fragments.py" --outdir "$FRAGDIR" --start "$START" --end "$END" \
+  python3 "$HERE/make_fragments.py" --points "$POINTS" --outdir "$FRAGDIR" --start "$START" --end "$END" \
           --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
 else
   echo ">> generating fragments (nmax=$NCARDS) into $FRAGDIR"
-  python3 "$HERE/make_fragments.py" --outdir "$FRAGDIR" --nmax "$NCARDS" \
+  python3 "$HERE/make_fragments.py" --points "$POINTS" --outdir "$FRAGDIR" --nmax "$NCARDS" \
           --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
 fi
 
