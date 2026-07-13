@@ -4,6 +4,16 @@
 # randomises the per-job seeds). Invoked by submit_nanogen.sh --backend crab,
 # but can be run standalone after fragments are generated with --gridpack-base.
 #
+# INITIAL PRODUCTION ONLY — DO NOT use CRAB to add statistics to a point that
+# already ran. CRAB seeds jobs by job-number-within-task (no fixed seed in the cfg),
+# so a SECOND task for the same point restarts job numbering at 1 and reuses the
+# first task's seed sequence on the SAME gridpack => DUPLICATE events. There is no
+# CRAB knob to offset the base seed (hardcoding one would make all jobs in the task
+# share a single seed). For collision-free TOP-UPS, use the condor backend instead:
+#   ./submit_nanogen.sh ... --job-offset <jobs-already-done> --njobs <extra>
+# (condor uses disjoint index-based seed windows; see run.sh / README "Seeds").
+# `crab resubmit` (re-running only FAILED jobs of an existing task) is safe.
+#
 # Env (set by submit_nanogen.sh, or export before calling):
 #   FRAGDIR       : dir of self-contained fragments (xrootd gridpack baked in)
 #   OUTPUT_LFN    : CRAB Data.outLFNDirBase, e.g. /store/user/acarvalh/smeft_nanogen

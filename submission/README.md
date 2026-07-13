@@ -75,6 +75,17 @@ and writes `crabConfigs/crabConfig_<point>.py`). Run it on lxplus (el9) with a
 valid grid proxy; CRAB sets per-job RNG seeds itself (the cfg carries **no** fixed
 seed). The gridpacks must be reachable via xrootd from grid worker nodes.
 
+> ⚠️ **CRAB is for INITIAL production only — do not use it to add statistics.**
+> CRAB seeds jobs by job-number-within-task, so a **second task for a point that
+> already ran** restarts numbering at 1 and reuses the first task's seeds on the
+> same gridpack → **duplicate events**. There's no CRAB knob to offset the base seed
+> (hardcoding one would collapse all jobs in a task to one seed). Within a task CRAB
+> *is* collision-free (unique per-job seeds), and across different points the
+> gridpacks differ so shared seed integers don't duplicate. `crab resubmit`
+> (re-running only failed jobs) is safe. **For top-ups, use the condor backend's
+> `--job-offset`** (see *Seeds* above) — its disjoint index-based windows are
+> collision-free across resubmissions; CRAB ignores `--job-offset`.
+
 ### Key options (defaults)
 | flag | default | meaning |
 |------|---------|---------|
