@@ -1,0 +1,7 @@
+# Generated at submit time — do not commit.
+cards_prod/
+cards_test/
+cards.list
+logs/
+# Compiled process tarball is hosted on EOS, never committed (55 MB binary blob).
+ggHH_SMEFT_run.tar.gz

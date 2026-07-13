@@ -1,0 +1,67 @@
+
+ClusterId=1
+In="/dev/null"
+Cmd="/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/gridpack/run_smeft_gridpack.sh"
+Err="logs/powheg_ggHH_SMEFT_CHbox_0_CH_m50_CuH_0_CHG_0_CtG_m0p3.1.0.err"
+Iwd="/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/gridpack"
+Out="logs/powheg_ggHH_SMEFT_CHbox_0_CH_m50_CuH_0_CHG_0_CtG_m0p3.1.0.out"
+Args="powheg_ggHH_SMEFT_CHbox_0_CH_m50_CuH_0_CHG_0_CtG_m0p3.input"
+Rank=0.0
+Owner=undefined
+QDate=1783970003
+MyType="Job"
+WantOS="el9"
+JobPrio=0
+UserLog="/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/gridpack/logs/smeft.1.log"
+MaxHosts=1
+MinHosts=1
+NumCkpts=0
+DiskUsage=20
+ImageSize=12
+StreamErr=false
+StreamOut=false
+ExitStatus=0
+JobFlavour="nextweek"
+TargetType="Machine"
+TransferIn=false
+Environment="INCLUDE_BINARY= LCG_VIEW= NCORES= NXGRID= OUTPUT_DIR= PROCESS_TARBALL= TESTMODE="
+JobUniverse=5
+NumRestarts=0
+RequestCpus=1
+RequestDisk=4194304
+CurrentHosts=0
+ExitBySignal=false
+NumJobStarts=0
+RemoteSysCpu=0.0
+Requirements=(TARGET.Arch == "X86_64") && (TARGET.OpSys == "LINUX") && (TARGET.Disk >= RequestDisk) && (TARGET.Memory >= RequestMemory) && (TARGET.HasFileTransfer)
+CommittedTime=0
+CondorVersion="$CondorVersion: 24.12.16 2026-01-29 BuildID: 869053 PackageID: 24.12.16-1 GitSHA: d5741e8b $"
+JobSubmitFile="submit_smeft.sub"
+RemoteUserCpu=0.0
+RequestMemory=2500
+TransferInput="/afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/gridpack/cards_prod/powheg_ggHH_SMEFT_CHbox_0_CH_m50_CuH_0_CHG_0_CtG_m0p3.input"
+CondorPlatform="$CondorPlatform: x86_64_AlmaLinux9 $"
+ExecutableSize=12
+NumSystemHolds=0
+PeriodicRemove=(JobStatus == 5) && ((time() - EnteredCurrentStatus) > 3600 || NumJobStarts > 5)
+SendCredential=true
+TransferOutput=""
+JobNotification=0
+JobSubmitMethod=0
+LeaveJobInQueue=false
+PeriodicRelease=(JobStatus == 5) && (HoldReasonCode =!= 1) && (NumJobStarts <= 5) && ((time() - EnteredCurrentStatus) > 600)
+JobLeaseDuration=2400
+TotalSuspensions=0
+CommittedSlotTime=0
+NumJobCompletions=0
+CumulativeSlotTime=0
+LastSuspensionTime=0
+RemoteWallClockTime=0.0
+ShouldTransferFiles="YES"
+TransferInputSizeMB=0
+EnteredCurrentStatus=1783970003
+WhenToTransferOutput="ON_EXIT"
+CumulativeRemoteSysCpu=0.0
+CommittedSuspensionTime=0
+CumulativeRemoteUserCpu=0.0
+CumulativeSuspensionTime=0

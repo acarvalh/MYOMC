@@ -1,0 +1,152 @@
+! ggHH production parameters:
+! hmass 125            ! Higgs boson mass. Value is hardcoded to 125 in the virtual matrix element,
+                       ! modification only possible in bornonly mode.
+! topmass 173          ! top quark mass. Value is hardcoded to 173 in the virtual matrix element,
+                       ! modification only possible in bornonly mode.
+hdecaymode -1        ! PDG code for Higgs boson decay products (it affects only the SMC)
+!                      allowed values are:  
+!                      0 all decay channels open
+!                      1-6 d dbar, u ubar,..., t tbar (as in HERWIG)
+!                      7-9 e+ e-, mu+ mu-, tau+ tau-
+!                      10  W+W-
+!                      11  ZZ
+!                      12  gamma gamma      
+!                      -1  all decay channels closed
+
+
+! Choose EFT parametrization
+usesmeft    1        ! 0: use HEFT parametrization and ignore CHbox, CH, CuH, CHG (no truncation);
+                     ! 1: use SMEFT (Warsaw) parametrization and ignore chhh, ct, ctt, cggh, cgghh (with truncation);
+                     ! 2: use HEFT parametrization and ignore CHbox, CH, CuH, CHG (with truncation!, testing purpose/SILH-Lag. calculation)
+
+! Values of the Higgs couplings w.r.t SM: HEFT parametrization
+chhh      1.0       ! Trilinear Higgs self-coupling
+ct        1.0       ! Top-Higgs Yukawa coupling
+ctt       0.0       ! Two-top-two-Higgs (tthh) coupling
+cggh      0.0       ! Effective gluon-gluon-Higgs coupling
+cgghh     0.0       ! Effective two-gluon-two-Higgses coupling
+
+! Values of the Higgs couplings using SMEFT (Warsaw) parametrization (Wilson coefficients enter as C/Lambda^2)
+Lambda      1.0      ! EFT counting mass Scale (in TeV)
+CHbox       -7.384947606552112      ! Kinetic term of SU(2)_L singlet (with d'Alembert operator)
+CHD         0.0      ! second Kinetic term
+CH          -1.2857918661167094      ! Additional term to Higgs potential
+CuH         2.8672140645393256      ! Modified Yukawa term
+CHG         0.008191193563235158      ! Higgs-Glue-Glue operator
+
+! Truncation options (2,3 only available for leading operators defined above):
+! 3: cross section based on |A_SM+A_dim6+A_dbldim6|^2
+! 2: cross section based on |A_SM+A_dim6|^2+2*Re(A_SM x conj(A_dbldim6))
+! 1: cross section based on |A_SM+A_dim6|^2
+! 0: cross section based on |A_SM|^2+2*Re(A_SM*conj(A_dim6))
+SMEFTtruncation  1  
+
+
+! Subleading operators (only available for truncation options 0,1)
+includesubleading  0        ! 0: exclude subleading operators,
+                            ! 1: include subleading operators applying loop power counting for C_tG (i.e. C_tG only enters linearly), 
+                            ! 2: include subleading operators without loop power counting for C_tG (only valid in bornonly mode), 
+                            ! 3: for testing purposes only (check O_tG implementation against GoSam, print PS point and ME for 4-top)
+CtG         0      ! Wilson coefficient of chromomagnetic operator
+CQt         0      ! Wilson coefficient of 4-top operator C_Qt^(1)
+CQt8        0      ! Wilson coefficient of 4-top operator C_Qt^(8)
+CQQtt       0      ! sum of Wilson coefficients of 4-top operators C_QQ^(1)+C_tt
+CQQ8        0      ! Wilson coefficient of 4-top operator C_QQ^(8)
+GAMMA5BMHV  0      ! Choose gamma5 scheme: 0 NDR (default), 1 BMHV
+
+
+! scale dependence of Wilson coefficients in SMEFT
+WCscaledependence   0       ! 0: set muEFT = muren, but neglect running of Wilson coefficients
+                            ! 1: set muEFT = inputscaleEFT * EFTscfact, i.e. consider running from inputscaleEFT to fixed muEFT (for EFTscfact != 1)
+                            ! 2: set muEFT = mHH/2 * EFTscfact, 
+                            !    i.e. consider running from inputscaleEFT to dynamic value for muEFT
+inputscaleEFT       173     ! the scale at which the Wilson coefficients are defined/measured (called mu_0 in publication)
+EFTscfact           1d0     ! (default 1d0) EFT scale factor
+
+! general parameters:
+numevts  NEVENTS     ! number of events to be generated (placeholder; substituted
+                     ! by run_smeft_gridpack.sh for the build and by runcmsgrid.sh
+                     ! at event-generation time -- HEFT convention)
+ih1         1        ! hadron 1 (1 for protons, -1 for antiprotons)
+ih2         1        ! hadron 2 (1 for protons, -1 for antiprotons)
+ebeam1 6500d0        ! energy of beam 1
+ebeam2 6500d0        ! energy of beam 2
+! To be set only if using LHA pdfs
+lhans1 90400         ! pdf set for hadron 1 (LHA numbering)
+lhans2 90400 	     ! pdf set for hadron 2 (LHA numbering)
+! To be set only if using internal mlm pdf
+# ndns1 131          ! pdf set for hadron 1 (mlm numbering)
+# ndns2 131          ! pdf set for hadron 2 (mlm numbering)
+! To be set only if using different pdf sets for the two incoming hadrons
+! QCDLambda5 0.25    ! for not equal pdf sets 
+
+! Parameters to allow or not the use of stored data
+use-old-grid    1    ! if 1 use old grid if file pwggrids.dat is present (<> 1 regenerate)
+use-old-ubound  1    ! if 1 use norm of upper bounding function stored in pwgubound.dat, if present; <> 1 regenerate
+!
+ncall1  10000        ! number of calls for initializing the integration grid
+itmx1       3        ! number of iterations for initializing the integration grid
+ncall2  10000        ! number of calls for computing the integral and finding upper bound
+itmx2       3        ! number of iterations for computing the integral and finding upper bound
+foldcsi     1        ! number of folds on csi integration
+foldy       1        ! number of folds on  y  integration
+foldphi     1        ! number of folds on phi integration
+nubound 10000        ! number of bbarra calls to setup norm of upper bounding function
+# icsimax   1        ! <= 100, number of csi subdivision when computing the upper bounds
+# iymax     1        ! <= 100, number of y subdivision when computing the upper bounds
+# xupbound 2d0       ! increase upper bound for radiation generation
+
+
+! OPTIONAL PARAMETERS
+
+! scale settings:
+facscfact   1d0      ! (default 1d0) fac scale factor: mufact = muref * facscfact, muref=mHH/2
+renscfact   1d0      ! (default 1d0) ren scale factor: muren  = muref * renscfact, muref=mHH/2
+alphas_from_pdf 1    ! calls alpha_s from pdf instead of POWHEG function
+
+! Born, plots and powheg strategy:
+#bornonly          1  ! (default 0) if 1 do Born only
+#testplots 1
+fastbtlbound      1  ! fast evaluation of Btilde upper bounds
+storemintupb      1  ! store function calls in binary file for more precise generation
+ubexcess_correct  1  ! corrects for error in upper bound estimate
+storeinfo_rwgt    1  ! store info to allow for reweighting
+softtest          0  ! no check of the soft limit in the real
+colltest          0  ! no check of the collinear limit in the real
+
+! PARAMETERS needed for ggHH
+hdamp           250
+
+! PARAMETERS for parallel runnning
+! -- non parallel (for testing purposes only)
+iseed    SEED        !  Start the random number generator with seed iseed
+                     !  (placeholder; substituted at build / generation time. Ignored
+                     !  while manyseeds=1, i.e. during the parallel gridpack build.)
+#rand1     0         !  skipping  rand2*100000000+rand1 numbers.  
+#rand2     0         !  (see RM48 short writeup in CERNLIB)              
+
+! -- parallel
+manyseeds 1          ! Used to perform multiple runs with different random
+                     ! seeds in the same directory.
+                     ! If set to 1, the program asks for an integer j;
+                     ! The file pwgseeds.dat at line j is read, and the
+                     ! integer at line j is used to initialize the random
+                     ! sequence for the generation of the event.
+                     ! The event file is called pwgevents-'j'.lhe
+parallelstage 4
+xgriditeration 1
+maxseeds    9999
+
+! PARAMETERS for reweighting
+#rwl_file 'reweight_setup.xml'
+
+
+! PARAMETERS for Pythia8
+#py8tune  xxx
+#py8hepmc 1
+#py8nohad 1
+#py8nompi 1
+
+check_bad_st1 1
+check_bad_st2 1
+

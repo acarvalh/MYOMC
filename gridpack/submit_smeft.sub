@@ -1,0 +1,68 @@
+# HTCondor submit description for ggHH_SMEFT gridpacks — one job per parameter point.
+# Conventions mirror genproductions bin/Powheg/run_pwg_condor.py
+# (+JobFlavour, MY.WantOS, getenv, periodic_remove, WhenToTransferOutput).
+#
+# Submit with the driver:  ./submit_smeft.sh   (it fills the variables below and
+# generates cards.list).  You can also override on the CLI:
+#   condor_submit submit_smeft.sub -a 'PROCESS_TARBALL=...' -a 'OUTPUT_DIR=...'
+
+universe                = vanilla
+executable              = run_smeft_gridpack.sh
+
+# The per-point card is the queue variable; ship it to the node, pass its basename.
+arguments               = $Fnx(card)
+transfer_input_files    = $(card)
+should_transfer_files   = YES
+# ON_EXIT (not ON_EXIT_OR_EVICT): the job delivers its gridpack to EOS itself, so
+# there is nothing to hand back on eviction. ON_EXIT_OR_EVICT tried to spool output
+# on every eviction and FAILED (hold Code 13) -> the job was then auto-removed.
+# With ON_EXIT an evicted job simply requeues and re-runs instead of being held.
+WhenToTransferOutput    = ON_EXIT
+transfer_output_files   = ""
+
+# Runtime configuration handed to run_smeft_gridpack.sh. ALL vars the job needs are
+# passed EXPLICITLY here (INCLUDE_BINARY, LCG_VIEW, NCORES, NXGRID, OUTPUT_DIR,
+# PROCESS_TARBALL, TESTMODE), so the job does NOT inherit the submitter's shell.
+environment             = "PROCESS_TARBALL=$(PROCESS_TARBALL) OUTPUT_DIR=$(OUTPUT_DIR) NCORES=$(NCORES) NXGRID=$(NXGRID) INCLUDE_BINARY=$(INCLUDE_BINARY) TESTMODE=$(TESTMODE) LCG_VIEW=$(LCG_VIEW)"
+# Clean environment (airtight for third parties): getenv False = do not copy the
+# submit shell's env into the job. The grid proxy for EOS xrdcp is delivered properly
+# by use_x509userproxy (the file is transferred + X509_USER_PROXY set on the worker),
+# not inherited via getenv. Mirrors submit_nanogen.sub.
+getenv                  = False
+use_x509userproxy       = True
+
+# Resources — request_cpus MUST equal NCORES.
+# TODO: tune request_memory / +JobFlavour from the single-point timing test.
+request_cpus            = $(NCORES)
+request_memory          = 2500M
+request_disk            = 4GB
+
+# OS container selection on lxplus (el9 matches the LCG_107/el9 build).
+MY.WantOS               = "el9"
+
+# Wall-clock budget. lxplus flavours: espresso(20m) microcentury(1h) longlunch(2h)
+# workday(8h) tomorrow(1d) testmatch(3d) nextweek(1w). Full-theory ggHH virtual is
+# slow — start generous, tighten once timing is known.
++JobFlavour             = "nextweek"
+
+# Per-job logs (keep in a logs/ subdir).
+output                  = logs/$(point).$(ClusterId).$(ProcId).out
+error                   = logs/$(point).$(ClusterId).$(ProcId).err
+log                     = logs/smeft.$(ClusterId).log
+
+# Hold handling: recover transient holds instead of deleting them (a held job used
+# to be removed on the spot, silently losing points).
+#  - periodic_release: retry a hold that is NOT a user condor_hold (HoldReasonCode
+#    1), after a 10-min backoff, up to 5 restarts. Evictions/transfer blips self-heal.
+#  - periodic_remove: give up only when a job cannot make progress — held > 1h
+#    (never released) or restarted too many times. Real failures still get dropped.
+periodic_release        = (JobStatus == 5) && (HoldReasonCode =!= 1) \
+                          && (NumJobStarts <= 5) \
+                          && ((time() - EnteredCurrentStatus) > 600)
+periodic_remove         = (JobStatus == 5) && \
+                          ( (time() - EnteredCurrentStatus) > 3600 || NumJobStarts > 5 )
+# Throttle how many jobs materialize at once (protects the schedd for 2500 points).
+max_materialize         = 200
+
+# Queue one job per card listed in cards.list; expose a short tag as $(point).
+queue point,card from cards.list
