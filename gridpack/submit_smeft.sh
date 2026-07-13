@@ -35,7 +35,10 @@ PROCESS_TARBALL=${PROCESS_TARBALL:-root://eosuser.cern.ch//eos/user/a/acarvalh/s
 NCORES=4                                   # cores/job (== request_cpus); run.sh parallelises stages 1-4
 MEM_PER_CORE=2000                          # MB per core -> request_memory = NCORES*MEM_PER_CORE
 NXGRID=1                                   # xgrid iterations at parstage 1
-INCLUDE_BINARY=0
+# Ship pwhg_main inside the gridpack by DEFAULT so every produced gridpack is a complete,
+# CMS-runnable POWHEG gridpack (runcmsgrid.sh + pwhg_main + card + grids). Turn off with
+# --no-binary only if you deliberately want a grids-only pack (not CMS-runnable).
+INCLUDE_BINARY=1
 LCG_VIEW=/cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc11-opt/setup.sh
 FLAVOUR=nextweek
 DRYRUN=0
@@ -55,7 +58,8 @@ while [ $# -gt 0 ]; do
     --mem-per-core) MEM_PER_CORE=$2; shift 2;;
     --nxgrid)  NXGRID=$2; shift 2;;
     --flavour) FLAVOUR=$2; shift 2;;
-    --include-binary) INCLUDE_BINARY=1; shift;;
+    --include-binary) INCLUDE_BINARY=1; shift;;        # default (kept for back-compat)
+    --no-binary|--exclude-binary) INCLUDE_BINARY=0; shift;;  # grids-only pack (NOT CMS-runnable)
     --dry-run) DRYRUN=1; shift;;
     --report|--status)            REPORT=1; shift;;
     --only-missing|--resubmit-missing) ONLY_MISSING=1; shift;;

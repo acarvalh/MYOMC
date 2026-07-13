@@ -43,6 +43,11 @@ bundled template `powheg-2.input` and the bundled points grid
 `run_smeft_gridpack.sh` stages the process tarball, runs POWHEG stages 1–4, assembles
 `<point>_gridpack.tar.gz`, and xrdcp's it to `--outdir`.
 
+**By default the gridpack is CMS-runnable** — `pwhg_main` is packed in (`INCLUDE_BINARY=1`)
+alongside `runcmsgrid.sh`, the single-run card and the integration grids, so
+`ExternalLHEProducer` in the nanogen step generates events straight from it. Pass
+`--no-binary` only if you deliberately want a grids-only pack (not CMS-runnable).
+
 `makeSMEFTCards.py` sets `includesubleading 1` **only** for points with `CtG != 0` (the
 chromomagnetic operator is subleading; enabling it costs extra grid integration, so
 CtG=0 points leave it `0` and reduce to the 4D physics).
@@ -149,6 +154,7 @@ integration and, later, nanogen event generation.
 | `--carddir DIR` | `./cards_prod` | where generated POWHEG cards go |
 | `--ncores N` | 4 | cores/job (`request_cpus`); POWHEG parallelises stages 1–4 |
 | `--nxgrid N` | 1 | xgrid iterations at parstage 1 |
+| `--no-binary` | off | build a grids-only pack **without** `pwhg_main` (NOT CMS-runnable) |
 | `--flavour F` | nextweek | HTCondor `+JobFlavour` (wall-clock budget) |
 | `--only-missing` | off | (re)submit only points without a gridpack yet |
 | `--report` | off | print done/missing status, do not submit |
