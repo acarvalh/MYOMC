@@ -23,6 +23,17 @@ fragments/<point>.py            <->  <point>_gridpack.tar.gz   (on EOS)
 | `submit_crab.sh`     | **crab** backend: build a cmsRun cfg per point, write a `PrivateMC` CRAB config, `crab submit` |
 | `submit_nanogen.sh`  | driver (both backends): gen fragments → condor `joblist.txt` **or** CRAB tasks |
 
+## Grid proxy
+Jobs xrdcp gridpacks from EOS (and NANOGEN back), so they need a grid proxy. The driver
+**auto-creates** one at `$X509_USER_PROXY` (else `$HOME/private/x509up`) if none is valid,
+so you usually don't have to. To make it yourself — e.g. to share one proxy with the
+gridpack step (`MYOMC/gridpack`, which does **not** auto-create) — run first:
+
+```bash
+voms-proxy-init --voms cms --valid 192:00
+export X509_USER_PROXY=$(voms-proxy-info -path)   # the nanogen driver honours this path
+```
+
 ## Usage
 ```bash
 cd /afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/submission
@@ -185,6 +196,32 @@ The NANOGEN `GenPart` table then holds only the gg→HH hard-scattering particle
 and `LHEPart` (filled directly from the gridpack LHE) is present regardless —
 much faster and smaller. The switch lives in the **fragment**, so it applies to
 both backends; combine freely with `--report`/`--only-missing`/range flags.
+
+## Timing
+
+Cost is dominated by the **hard process**: every generated event triggers a full
+`ggHH_SMEFT` `mtdep=3` two-loop virtual evaluation inside `ExternalLHEProducer`
+(**~10 CPU-seconds/event**). The Pythia8 shower, the NANOGEN step and the CMSSW build are
+small by comparison. Because the gridpack ships its integration grids, jobs **generate on
+demand** — no long integration here, unlike the gridpack step.
+
+Per-job wall time on the defaults (`--nthreads 1`, ~10 s/event, single core):
+
+| events/job | ≈ gen time | + CMSSW build | job total | how you get there |
+|---|---:|---|---:|---|
+| 100 (`--test`) | ~17 min | ~few min | **~20 min** | `--total-events 100 --njobs 1` |
+| 1 000 | ~2.8 h | ~few min | **~2.8 h** | measured timing probe |
+| 10 000 | ~28 h | ~few min | **~28 h** | default `--total-events 50000 --njobs 5` |
+| 20 000 | ~56 h | ~few min | **~56 h** | e.g. 100k in 5 jobs |
+
+- **Fixed overhead:** each job builds `CMSSW_14_1_8` fresh in scratch (~few min). Subtract
+  it (from the `.out` timestamps) before scaling a probe to production.
+- **Wall budget:** the default `--flavour testmatch` = 72 h, so keep **events/job ≲ 20 000**
+  on one thread. Split more events into more jobs (`--njobs`) rather than fatter jobs.
+- **`--nthreads N`** hands `cmsRun` N threads (`request_cpus = N`); event generation scales
+  roughly `1/N`, so `--nthreads 4` brings 20k events into ~14 h.
+- **`--hard-only`** skips the parton shower / hadronization — faster and smaller output, but
+  the ~10 s/event virtual (the dominant term) is unchanged, so the wall-time win is modest.
 
 ## Where the NANOGEN files go
 The output location depends on the backend.

@@ -7,6 +7,19 @@ The nanogen step in [`../submission/`](../submission/) then consumes these gridp
 > This folder is the **version-controlled** copy. The author's live working tree lives
 > outside the repo in `generation_k4/condor/`; the two are kept in sync. Edit here.
 
+## Grid proxy (required — do this first)
+
+`submit_smeft.sub` sets `use_x509userproxy = True`, so `condor_submit` **fail-fasts** if
+you have no valid proxy (the worker needs it to xrdcp the gridpack to EOS). Unlike the
+nanogen driver, `submit_smeft.sh` does **not** create one for you — make it yourself:
+
+```bash
+voms-proxy-init --voms cms --valid 192:00
+export X509_USER_PROXY=$(voms-proxy-info -path)   # so this proxy is the one condor ships
+```
+
+192 h (8 days) comfortably outlives a `nextweek` gridpack job. Re-run when it expires.
+
 ## Submit from THIS folder
 
 ```bash
@@ -66,6 +79,64 @@ Yes, with two external things a clone can't carry:
    points at the author's EOS.
 
 Everything else (scripts, card template, points grid, `runcmsgrid.sh`) is in the repo.
+
+## Coarse grid for fast tests (`--test`)
+
+A full point is a multi-day integration (see *Timing* below), so before committing a
+wave you validate the **whole pipeline** — warmup → POWHEG stages 1–4 → gridpack
+assembly → xrdcp delivery — on a **coarse, physics-degraded** build that finishes in
+minutes. `--test` (alias `--smoke`) does exactly that: it sets `TESTMODE=1` in the job
+and queues **only the first selected point**.
+
+`TESTMODE=1` (in `run_smeft_gridpack.sh`) rewrites the card down to the floor that still
+exercises every stage — the cost of POWHEG integration is ~linear in `ncall*itmx`, so
+this is what collapses days into minutes:
+
+| card key | production (from `powheg-2.input`) | `--test` floor |
+|---|---|---|
+| `ncall1` / `itmx1` (stage 1 grid) | large / several | `300` / `1` |
+| `ncall2` / `itmx2` (stage 2 grid) | large / several | `300` / `1` |
+| `nubound` (stage 3 upper bound) | large | `300` |
+| `numevts` (stage 4 events) | production count | `50` |
+
+Both the **integration AND the event count** are floored — flooring only `ncall/itmx`
+once left `numevts` at 5000 and the job still ran into the queue wall. `--test` also
+switches `+JobFlavour` to `workday` (8h) — ample for the ~30–40 min floored build.
+
+```bash
+cd MYOMC/gridpack
+voms-proxy-init --voms cms --valid 192:00
+./submit_smeft.sh --start 4 --end 4 --test          # coarse build of point 4 only
+```
+
+The result is a **complete, CMS-runnable** gridpack (`pwhg_main` + `runcmsgrid.sh` +
+card + grids/`events.cdf`) — use it to exercise the **nanogen** plumbing (see
+[`../submission/README_CANARY.md`](../submission/README_CANARY.md)) — but its weights are
+**physics-degraded**. Never feed a `--test` gridpack into production. Send coarse builds
+to a separate `--outdir` (e.g. `…_test`) so `--only-missing` never mistakes one for a
+finished production point.
+
+## Timing
+
+Full-theory `ggHH_SMEFT` is expensive because the `mtdep=3` two-loop virtual costs
+**~10 CPU-seconds per phase-space point evaluation**. That single number drives both the
+integration and, later, nanogen event generation.
+
+| what | wall time | notes |
+|---|---|---|
+| **Production point** (default card, 4 cores) | **~52 h** | one HTCondor job; `+JobFlavour nextweek` |
+| ├─ stages 1+2 (grid integration) | ~26 h | cost ~linear in `ncall*itmx` |
+| └─ stage 3 (`nubound`) + stage 4 (events) | ~26 h | each generated event = a full virtual eval |
+| stage-4 event generation alone (5000 evts) | ~3.5 h | dominates the second half |
+| **Coarse `--test` build** | **~30–40 min** | floored ncall/itmx/nubound/numevts; `workday` |
+
+- **CtG ≠ 0 points cost more.** `makeSMEFTCards.py` sets `includesubleading 1` for them
+  (extra subleading matrix elements in the integration); CtG = 0 points reduce to the 4D
+  physics with `includesubleading 0` and integrate faster.
+- **`--ncores`** parallelises POWHEG stages 1–4; wall time scales roughly `1/ncores`
+  (the ~52 h figure is 4 cores). `request_cpus` is pinned to `--ncores`.
+- Start with the generous `nextweek` flavour; tighten `--flavour` only once a real point's
+  wall time is measured for your `--ncores`/`--nxgrid`.
 
 ## Key flags
 
