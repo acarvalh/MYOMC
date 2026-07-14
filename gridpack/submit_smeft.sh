@@ -33,7 +33,16 @@ OUTPUT_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_ke
 # rebuild one with make_process_tarball.sh if you have the POWHEG-BOX build).
 PROCESS_TARBALL=${PROCESS_TARBALL:-root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1/ggHH_SMEFT_run.tar.gz}
 NCORES=4                                   # cores/job (== request_cpus); run.sh parallelises stages 1-4
-MEM_PER_CORE=2000                          # MB per core -> request_memory = NCORES*MEM_PER_CORE
+# request_memory is FLAT, not per-core. Measured peak MemoryUsage across every job ever
+# run (incl. full 52h 4-stream production) is ~240 MB, 394 MB worst case — POWHEG's
+# two-loop virtual is CPU-bound, not memory-bound, and does NOT scale with NCORES. The
+# old NCORES*MEM_PER_CORE model over-requested ~8-12 GB, so 4-CPU+el9 slots never matched
+# and jobs sat idle. CAVEAT: that 394 MB sample is ALL leading-only (includesubleading 0);
+# the CtG!=0 subleading points have NEVER been measured and add chromomagnetic two-loop
+# amplitudes that may use more. 3000 MB = ~7.6x the leading peak (big margin for the
+# subleading unknown) yet still matches lxplus slots easily. Tighten once a real
+# subleading job reports its peak (see README "Timing"/memory notes). Override with --mem.
+REQUEST_MEM=3000                           # MB, total per job (override with --mem)
 NXGRID=1                                   # xgrid iterations at parstage 1
 # Ship pwhg_main inside the gridpack by DEFAULT so every produced gridpack is a complete,
 # CMS-runnable POWHEG gridpack (runcmsgrid.sh + pwhg_main + card + grids). Turn off with
@@ -55,7 +64,8 @@ while [ $# -gt 0 ]; do
     --outdir)  OUTPUT_DIR=$2; shift 2;;
     --process-tarball) PROCESS_TARBALL=$2; shift 2;;
     --ncores)  NCORES=$2; shift 2;;
-    --mem-per-core) MEM_PER_CORE=$2; shift 2;;
+    --mem)     REQUEST_MEM=$2; shift 2;;                 # total request_memory (MB), flat
+    --mem-per-core) REQUEST_MEM=$(( $2 * NCORES )); shift 2;;  # deprecated: kept for back-compat
     --nxgrid)  NXGRID=$2; shift 2;;
     --flavour) FLAVOUR=$2; shift 2;;
     --include-binary) INCLUDE_BINARY=1; shift;;        # default (kept for back-compat)
@@ -81,7 +91,6 @@ if [ "$TEST" = "1" ]; then
                                             # but the site wall-limit killed a 2h longlunch smoke job
   echo ">> TEST MODE: coarse smoke build of the FIRST selected point (short queue, degraded stats)"
 fi
-REQUEST_MEM=$(( NCORES * MEM_PER_CORE ))
 
 # List basenames of gridpacks already present in OUTPUT_DIR (one listing). A point
 # counts as completed when "<tag>_gridpack.tar.gz" appears here.
