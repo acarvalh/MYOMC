@@ -57,7 +57,11 @@ NCPU=$ncpu
 # Events per stream, rounded UP so the total is >= nevt (slight overshoot is standard
 # for CMS multicore gridpacks; the downstream step reads however many events land).
 PER=$(( (nevt + NCPU - 1) / NCPU ))
-sed -e "s/NEVENTS/$PER/" powheg.input.template > powheg.input
+# Fill BOTH placeholders the runtime template ships: NEVENTS (events/stream) and SEED.
+# manyseeds=1 takes the actual per-stream seeds from pwgseeds.dat below, so the iseed
+# value is inert — BUT pwhg_main still PARSES it, and a leftover non-numeric "SEED"
+# is a fatal `powheginput error: cannot parse iseed SEED` (=> no LHE, 0 events).
+sed -e "s/NEVENTS/$PER/" -e "s/SEED/$seed/" powheg.input.template > powheg.input
 
 # One distinct RNG seed per stream. $seed is the externalLHEProducer seed, i.e. the
 # lower edge (+1) of this (point,job)'s disjoint 1000-wide seed window assigned by
