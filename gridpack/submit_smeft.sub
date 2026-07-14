@@ -40,6 +40,20 @@ request_disk            = 4GB
 # OS container selection on lxplus (el9 matches the LCG_107/el9 build).
 MY.WantOS               = "el9"
 
+# Refuse the pool's slow silicon. Measured over 615 completed builds: hosts with
+# KFlops < 3M ran a median 100.7h vs 55.1h on KFlops >= 3M -- a 2.2x swing from
+# HARDWARE, not physics (the SAME point rebuilt varies up to 1.6x, and no Wilson
+# coefficient predicts cost: strongest |rho| is 0.28 for CH). That slow tail is what
+# blows the 72h testmatch wall: builds over 72h drop 20.3% -> 3.7% with this cut,
+# while ~10.4k of 13.9k candidate 4-core slots (75%) remain. >=4M/5M buys nothing
+# and costs slots, so 3M is the knee. KFlops is defined on 82352/82353 pool slots,
+# so this excludes essentially nothing by accident.
+# NOTE: the CERN schedd rewrites Requirements -- it MOVES this expression into
+# PreVerRequirements and wraps its own Hostgroup/AFS/CVMFS/OpSysAndVer chain around
+# it. So the top-level `Requirements` you see in condor_q will NOT show this clause;
+# check `condor_q -af PreVerRequirements`. It is applied, just relocated.
+Requirements            = (TARGET.KFlops >= 3000000)
+
 # Wall-clock budget. lxplus flavours: espresso(20m) microcentury(1h) longlunch(2h)
 # workday(8h) tomorrow(1d) testmatch(3d) nextweek(1w). A production point is ~52h, so
 # testmatch(72h) fits with ~20h margin. Do NOT go back to nextweek: the workers are in a
@@ -61,8 +75,18 @@ log                     = logs/smeft.$(ClusterId).log
 periodic_release        = (JobStatus == 5) && (HoldReasonCode =!= 1) \
                           && (NumJobStarts <= 5) \
                           && ((time() - EnteredCurrentStatus) > 600)
-periodic_remove         = (JobStatus == 5) && \
-                          ( (time() - EnteredCurrentStatus) > 3600 || NumJobStarts > 5 )
+#  - the NumJobStarts clause below is the WALL-LOOP BACKSTOP. A job killed at the
+#    testmatch wall is EVICTED, not held, so the hold rules above never see it: it
+#    just requeues and re-runs from zero (no checkpointing) forever, burning 72h a
+#    cycle. Even with the KFlops cut ~3.7% of builds still exceed 72h (max observed
+#    154.5h). Removing them after 4 starts makes the loop terminate: they then show
+#    up as missing in `--report` and can be resubmitted with `--only-missing
+#    --flavour nextweek`. Gated on JobStatus==1 so we only drop a job that has
+#    already failed and is waiting to retry -- never one mid-run. Threshold 4 (not
+#    2) because the staged drain evicts healthy jobs too, and those deserve retries.
+periodic_remove         = ( (JobStatus == 5) && \
+                          ( (time() - EnteredCurrentStatus) > 3600 || NumJobStarts > 5 ) ) || \
+                          ( (JobStatus == 1) && (NumJobStarts > 3) )
 # Throttle how many jobs materialize at once (protects the schedd for 2500 points).
 max_materialize         = 200
 

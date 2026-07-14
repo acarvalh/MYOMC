@@ -65,9 +65,20 @@ if [ -f "$CREATEGRID_PY" ] && [ -f "$FIXED_RUNCMSGRID" ]; then
     # Decide whether a rewrite is actually needed BEFORE paying for untar/retar,
     # so an already-correct gridpack costs only a cheap listing + one small diff
     # (no rewrite) -> zero measurable overhead when we run thousands in parallel.
+    # One listing serves both probes: a .tar.gz is not seekable, so every extra
+    # `tar` pass re-inflates the whole 112 MB payload.
     NEED_CG=0; NEED_RUN=0
-    tar tzf "$GP_ABS" | grep -qE '(^|/)creategrid\.py$' || NEED_CG=1
-    if ! tar xzOf "$GP_ABS" ./runcmsgrid.sh 2>/dev/null | cmp -s - "$FIXED_RUNCMSGRID"; then NEED_RUN=1; fi
+    GP_LIST=$(tar tzf "$GP_ABS" 2>/dev/null)
+    echo "$GP_LIST" | grep -qE '(^|/)creategrid\.py$' || NEED_CG=1
+    # Resolve the member NAME from the listing instead of hardcoding a prefix:
+    # submit_smeft.sh tars bare names (`runcmsgrid.sh`) while a self-healed repack
+    # below writes `./runcmsgrid.sh`, so no single literal probe matches both. The
+    # old `./runcmsgrid.sh` probe never matched the EOS layout -> NEED_RUN was
+    # always 1 -> every job untarred+retarred 112 MB even when nothing needed
+    # fixing, which is pure I/O to glitch on at scale.
+    RUN_MEMBER=$(echo "$GP_LIST" | grep -E '(^|/)runcmsgrid\.sh$' | head -1)
+    if [ -z "$RUN_MEMBER" ] ||
+       ! tar xzOf "$GP_ABS" "$RUN_MEMBER" 2>/dev/null | cmp -s - "$FIXED_RUNCMSGRID"; then NEED_RUN=1; fi
     if [ $NEED_CG = 1 ] || [ $NEED_RUN = 1 ]; then
         PATCHDIR="$TOPDIR/gp_patch"
         rm -rf "$PATCHDIR"; mkdir -p "$PATCHDIR"
