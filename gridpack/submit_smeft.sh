@@ -49,7 +49,13 @@ NXGRID=1                                   # xgrid iterations at parstage 1
 # --no-binary only if you deliberately want a grids-only pack (not CMS-runnable).
 INCLUDE_BINARY=1
 LCG_VIEW=/cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc11-opt/setup.sh
-FLAVOUR=nextweek
+# testmatch (72h), NOT nextweek (1w). lxplus workers run a staged drain and their START
+# demands (time() + MaxRuntime < ShutdownTime), so a 7-day job only matches a machine with
+# 7 clear days before its scheduled shutdown -- ~75 concurrent slots pool-wide, which left
+# 708 jobs idle for days. 72h matches ~279 (3.7x) and still clears the ~52h production
+# point with ~20h margin. Do NOT raise --ncores to buy wall time: 8-core cuts capacity to
+# ~113 slots (nodes with 4-7 free cores drop out), a net throughput LOSS. See README.
+FLAVOUR=testmatch
 DRYRUN=0
 REPORT=0                                    # --report: only print done/missing, no submit
 ONLY_MISSING=0                              # --only-missing: submit only not-yet-done points

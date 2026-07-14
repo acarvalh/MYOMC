@@ -129,7 +129,7 @@ integration and, later, nanogen event generation.
 
 | what | wall time | notes |
 |---|---|---|
-| **Production point** (default card, 4 cores) | **~52 h** | one HTCondor job; `+JobFlavour nextweek` |
+| **Production point** (default card, 4 cores) | **~52 h** | one HTCondor job; `+JobFlavour testmatch` (72 h) |
 | ├─ stages 1+2 (grid integration) | ~26 h | cost ~linear in `ncall*itmx` |
 | └─ stage 3 (`nubound`) + stage 4 (events) | ~26 h | each generated event = a full virtual eval |
 | stage-4 event generation alone (5000 evts) | ~3.5 h | dominates the second half |
@@ -140,8 +140,53 @@ integration and, later, nanogen event generation.
   physics with `includesubleading 0` and integrate faster.
 - **`--ncores`** parallelises POWHEG stages 1–4; wall time scales roughly `1/ncores`
   (the ~52 h figure is 4 cores). `request_cpus` is pinned to `--ncores`.
-- Start with the generous `nextweek` flavour; tighten `--flavour` only once a real point's
-  wall time is measured for your `--ncores`/`--nxgrid`.
+
+## Why `testmatch` and 4 cores (do not "improve" these)
+
+Both defaults are set by how the lxplus pool schedules, not by the physics. Getting them
+wrong is what makes jobs sit idle for days — it looks like a resource shortage but isn't.
+
+**The flavour must stay ≤ 72 h.** The workers run a rolling *staged drain*, and their
+`START` expression is
+
+```
+(InStagedDrain =?= true && (time() + MaxRuntime < ShutdownTime)) || InStagedDrain =?= false
+```
+
+so a machine accepts your job only if it has your **entire** `MaxRuntime` left before its
+scheduled shutdown. `nextweek` therefore demands 7 clear days and matches almost nothing:
+a `condor_q -better-analyze` reports thousands of *healthy, free* slots that "reject your
+job because of their own requirements". This stranded 708 jobs for 3 days. `testmatch`
+(72 h) clears the ~52 h point with ~20 h of margin.
+
+**More cores is a trap.** Raising `--ncores` halves the wall time but costs more than half
+the capacity, because the pool is mostly machines with a handful of free cores — measured
+concurrent job slots (el9 + AFS + healthy + drain-aware):
+
+| flavour | 4-core | 8-core | 16-core |
+|---|---|---|---|
+| nextweek (7 d) | 75 | 35 | 12 |
+| **testmatch (3 d)** | **279** | 113 | 43 |
+| tomorrow (1 d) | 1131 | 362 | 103 |
+
+At `testmatch`: 4 cores ≈ 279 jobs / 52 h ≈ **5.4 points/h**; 8 cores ≈ 113 / 26 h ≈ 4.3.
+8 cores would only pay off if it fit `tomorrow`, and ~26 h doesn't fit a 24 h wall. There
+is **no checkpointing** — a job killed at the wall restarts from zero — so never trim the
+flavour below the real wall time either. Re-measure with `condor_status` before changing
+these; the drain campaign's shutdown horizon moves.
+
+**Already-queued jobs** can be retargeted in place, without losing queue position:
+
+```bash
+condor_qedit -constraint 'JobStatus==1 && regexp("run_smeft_gridpack.sh", Cmd)' MaxRuntime 259200
+condor_qedit -constraint 'JobStatus==1 && regexp("run_smeft_gridpack.sh", Cmd)' JobFlavour '"testmatch"'
+```
+
+**Memory is not a knob.** The startd carves child slots at a flat **3000 MB per core**
+(visible as `ChildMemory` in a slot ad), so a 4-CPU job is handed a 12000 MB slot whatever
+`--mem` says. `REQUEST_MEM=3000` matches that floor; lowering it buys nothing and raising
+it above `3000 × ncores` costs you matches. Measured peak is ~240 MB (394 MB worst case),
+though that sample is leading-only — CtG ≠ 0 subleading has never been measured.
 
 ## Key flags
 
@@ -155,7 +200,8 @@ integration and, later, nanogen event generation.
 | `--ncores N` | 4 | cores/job (`request_cpus`); POWHEG parallelises stages 1–4 |
 | `--nxgrid N` | 1 | xgrid iterations at parstage 1 |
 | `--no-binary` | off | build a grids-only pack **without** `pwhg_main` (NOT CMS-runnable) |
-| `--flavour F` | nextweek | HTCondor `+JobFlavour` (wall-clock budget) |
+| `--flavour F` | testmatch | HTCondor `+JobFlavour` (wall-clock budget); see *Why `testmatch`* |
+| `--mem MB` | 3000 | flat `request_memory`; the pool floors it at 3000 × `--ncores` anyway |
 | `--only-missing` | off | (re)submit only points without a gridpack yet |
 | `--report` | off | print done/missing status, do not submit |
 | `--dry-run` | off | build cards + `cards.list`, print submit args, do not submit |

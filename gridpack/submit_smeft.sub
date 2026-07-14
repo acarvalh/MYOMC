@@ -41,9 +41,11 @@ request_disk            = 4GB
 MY.WantOS               = "el9"
 
 # Wall-clock budget. lxplus flavours: espresso(20m) microcentury(1h) longlunch(2h)
-# workday(8h) tomorrow(1d) testmatch(3d) nextweek(1w). Full-theory ggHH virtual is
-# slow — start generous, tighten once timing is known.
-+JobFlavour             = "nextweek"
+# workday(8h) tomorrow(1d) testmatch(3d) nextweek(1w). A production point is ~52h, so
+# testmatch(72h) fits with ~20h margin. Do NOT go back to nextweek: the workers are in a
+# staged drain and only start a job if (time() + MaxRuntime < ShutdownTime), so a 7-day
+# job matches ~75 slots pool-wide vs ~279 for 72h. (The driver -appends this too.)
++JobFlavour             = "testmatch"
 
 # Per-job logs (keep in a logs/ subdir).
 output                  = logs/$(point).$(ClusterId).$(ProcId).out
