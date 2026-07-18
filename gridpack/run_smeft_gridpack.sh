@@ -84,13 +84,22 @@ sed -e "s/NEVENTS/$BUILD_NEVENTS/" -e "s/SEED/$BASE_SEED/" "$CARD" > "$RUNDIR/po
 # card (powheg.input-save, which run.sh reads for every stage) is coarsened; the
 # runtime template reuses the shipped grids so its ncall is irrelevant. NOT physics.
 if [ "$TESTMODE" = "1" ]; then
-    # The ggHH two-loop virtual is ~10 CPU-s per phase-space point, so integration
-    # cost is ~linear in ncall*itmx. The production run is 52h; ncall1500/itmx2 only
-    # cut that to ~5h (overshot longlunch). Push ncall/itmx to the floor that still
-    # yields a valid grid + a few events so the WHOLE path finishes in ~30-40 min.
-    # Floor BOTH the integration AND the stage-4 event count. Each generated event
-    # needs the ~10 CPU-s two-loop virtual, so 5000 events = ~3.5h alone on 4 cores —
-    # that (not integration) is what ran two smoke jobs into the queue wall limit.
+    # Integration cost is ~linear in ncall*itmx, so floor them. The production run
+    # is ~52-56h; ncall1500/itmx2 only cut that to ~5h (overshot longlunch). Push
+    # ncall/itmx to the floor that still yields a valid grid + a few events so the
+    # WHOLE path finishes in ~30-40 min. Floor BOTH the integration AND the stage-4
+    # event count -- events, not integration, are what ran two smoke jobs into the
+    # queue wall.
+    # NB the cost driver is NOT the two-loop virtual (an earlier comment here claimed
+    # ~10 CPU-s per phase-space point -- that was WRONG). The virtual is interpolated
+    # from the shipped Virt_full-SMEFT1_*.grid: measured `virt time` in
+    # pwgcounters-st4 is 13-17 SECONDS out of a ~25000s run (~0.1%). The real cost is
+    # the ONE-LOOP REAL RADIATION (GoSam pr2_gghhg/pr3_qghhq/pr9_gghhg/pr10_qghhq),
+    # and its per-call cost is dominated by GoSam's QUAD-precision rescue
+    # (PSP_check=.true., reduction_interoperation_rescue=QUADNINJA): gdb stack
+    # sampling found a CuH!=0,CHG!=0 point spends 92% of wall inside soft-float quad
+    # (__multf3, *_qp modules) vs 28% for a CuH=0&CHG=0 point -- which alone explains
+    # their 9x cost gap. So event count, not virtual evals, is the knob here.
     echo ">> TESTMODE=1: minimal integration + few events (ncall/itmx/nubound/numevts floored) — smoke test only"
     sed -i -e 's/^ncall1 .*/ncall1   300/'  -e 's/^itmx1 .*/itmx1    1/' \
            -e 's/^ncall2 .*/ncall2   300/'  -e 's/^itmx2 .*/itmx2    1/' \
