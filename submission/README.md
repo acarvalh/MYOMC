@@ -79,17 +79,40 @@ Options — all optional, all read-only:
 | `--gpdir`   | (from `--grid`) | explicit gridpack dir; overrides `--grid` |
 | `--nanodir` | `…/smeft_nanogen` | **must match the `--outdir` you submitted with** |
 | `--njobs`   | `5` | keep in sync with `NJOBS_PER_POINT` in `submit_nanogen.sh` |
+| `--batches` | (built-in layout) | file of `start stop` lines — your own row split |
+| `--chunk`   | — | uniform blocks of N points instead of the built-in layout |
 
 ```bash
 ./report_batches.sh --grid 4d          # the 4D grid + its gridpack dir
+./report_batches.sh --chunk 500        # 5 coarse rows instead of 27
 
 # if you submitted nanogen somewhere else, point the report at it
 ./report_batches.sh --nanodir root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_5d
 ```
+
 `--points` and `--gpdir` override `--grid` individually, but the JSON and the gridpack
 dir must describe the **same** grid — mismatch them and every index silently maps to
 the wrong point. Prefer `--grid`, which keeps the pair together (as `submit_nanogen.sh`
-does). The batch ranges are 5D-sized; on `--grid 4d` the tail batches read `0/…`.
+does).
+
+### Custom batch ranges
+The built-in rows are the production split. To use your own, put `start stop` pairs in
+a file — one per line, `#` comments and blank lines ignored — and pass `--batches`:
+
+```
+# who-owns-what.txt
+1701 1800
+1801 1900   # mine
+2401 2450
+```
+```bash
+./report_batches.sh --batches who-owns-what.txt
+```
+Ranges are 1-based inclusive, like `--start/--end` everywhere else. They may overlap
+and need not cover the grid; each row is counted independently, so the TOTAL line is
+the sum of the rows shown, **not** the whole grid. Ranges past the end of the grid are
+clamped with a warning on stderr, and the built-in layout falls back to uniform blocks
+if the JSON is smaller than it expects.
 
 Two counting traps the script handles, worth knowing if you ever count by hand:
 EOS keeps **versioned shadow copies** named `.sys.v#.<name>` that also end in

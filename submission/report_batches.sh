@@ -2,6 +2,7 @@
 # Print a per-batch table of how many gridpacks and nanogen files are ready on EOS.
 #   ./report_batches.sh [--grid 4d|5d] [--points <json>] [--gpdir <url>]
 #                       [--nanodir <url>] [--njobs <n>]
+#                       [--batches <file>] [--chunk <n>]
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -17,8 +18,10 @@ NANODIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
 POINTS=""                                      # explicit JSON; overrides --grid
 GPDIR=""                                       # explicit dir;  overrides --grid
 NJOBS=5                                        # nanogen jobs/point; must match submit_nanogen.sh
+BATCHFILE=""                                   # file of "start stop" lines
+CHUNK=""                                       # uniform blocks of N points
 
-usage() { sed -n '2,4p' "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
+usage() { sed -n "2,5p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -27,6 +30,8 @@ while [ $# -gt 0 ]; do
     --nanodir) NANODIR=$2; shift 2;;
     --points)  POINTS=$2;  shift 2;;
     --njobs)   NJOBS=$2;   shift 2;;
+    --batches) BATCHFILE=$2; shift 2;;
+    --chunk)   CHUNK=$2;     shift 2;;
     -h|--help) usage;;
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
@@ -65,7 +70,8 @@ sys.path.insert(0, os.environ.get("HERE", "."))
 from make_fragments import point_name
 
 points_f, gp_f, nano_f, njobs, gpdir, nanodir, batchfile, chunk = sys.argv[1:9]
-njobs = int(njobs); chunk = int(chunk)
+njobs = int(njobs); chunk = int(chunk) if chunk else 0
+if chunk < 0: sys.exit("--chunk must be positive")
 pts   = json.load(open(points_f))
 gp    = {l.strip() for l in open(gp_f)   if l.strip()}
 nano  = {l.strip() for l in open(nano_f) if l.strip()}
