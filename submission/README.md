@@ -60,15 +60,143 @@ cd /afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/submission
 ./report_batches.sh
 ```
 ```
- start   stop   pts |     gridpacks |   nanogen files |   points w/ full nanogen
-  1701   1800   100 |     100/100 * |       500/500 * |                100/100 *
-  1801   1900   100 |     100/100 * |         0/500   |                  0/100
-  1901   2000   100 |      74/100   |         0/500   |                  0/100
+ start   stop   pts |     gridpacks |  run idle held  gap  card   log |   nanogen files |        full
+  1701   1800   100 |     100/100 * |    0    0    0    0     -     - |       500/500 * |   100/100 *
+  1801   1900   100 |     100/100 * |    0    0    0    0     -     - |         0/500   |     0/100
+  1901   2000   100 |      75/100   |    8    0    0   17   yes    no |         0/500   |     0/100
+  2001   2050    50 |       3/50    |    0   47    0    0     -     - |         0/250   |      0/50
+   601    700   100 |       0/100   |    0    0    0  100    no    no |         0/500   |     0/100
 ```
 A `*` marks a **complete** cell. A star in the *gridpacks* column means the batch is
-ready for `submit_nanogen.sh`; a star in the last column means the batch is finished.
-That last column counts points with a complete set of `--njobs` files — a point with
-3/5 is still short, and a re-submit tops it up (the driver skips `gjob`s that exist).
+ready for `submit_nanogen.sh`; a star in `full` means the batch is finished. `full`
+counts points with a complete set of `--njobs` files — a point with 3/5 is still short,
+and a re-submit tops it up (the driver skips `gjob`s that exist).
+
+**`run`/`idle`/`held`/`gap` explain the missing gridpacks**, so a `74/100` is not
+ambiguous: they count only points with **no gridpack yet**, and always sum to the
+shortfall. Read from `condor_q` (JobStatus 1/2/5), not from logs:
+
+| column | meaning | what to do |
+|--------|---------|------------|
+| `run`  | building now | wait |
+| `idle` | queued, waiting for a slot | wait — usually fair-share, see below |
+| `held` | job stuck | `condor_rm` + resubmit; a release alone rarely fixes it |
+| `gap`  | **no file and no job** | never submitted, or submitted and lost — resubmit |
+
+`gap` is the column to act on: a build that finished and then failed to deliver (an
+expired proxy at the xrdcp step) looks exactly like a point that was never submitted.
+Both show up here and nowhere else.
+
+**`card` and `log` say *why* a batch has gaps.** They ask, of the gap points only, does
+a `<point>.input` card exist (in `cards_prod`) and does a condor `<point>.*.out` exist —
+printed as `yes`, `no`, `n/total` when mixed, or `-` when the batch has no gaps:
+
+| card | log | reading |
+|------|-----|---------|
+| `no`  | `no`  | **never submitted.** Cards are written at submit time, so no card means the range was never driven. Just submit it. |
+| `yes` | `no`  | **submitted, but the job left no trace — it probably hit the wall.** A job killed at its `MaxRuntime` is *evicted*, not held: it requeues, re-runs from zero (no checkpointing), and after `NumJobStarts > 3` the `periodic_remove` backstop drops it. Resubmit with a **longer flavour** (`--week`). |
+| `yes` | `yes` | it ran and finished or failed — read the log for the reason. |
+
+Two caveats on `log`. `submit_smeft.sub` writes to a **relative** `logs/` path, so logs
+land under whichever directory the submit ran from — the script searches
+`../gridpack/logs` and `../../condor/logs`, and `--logdir "d1 d2"` overrides. A submit
+from a third location leaves logs the report can't see, so `no` is weaker evidence than
+`yes`. And a colleague's job logs to *their* directory, never yours.
+
+⚠️ **When several people build into the same EOS directory, the two halves of the table
+have different scopes.** The gridpack/nanogen counts are the **team's** output; the
+queue columns are **yours alone**. So a point a colleague is building right now shows
+as a `gap` — and `gap` is exactly the column you'd act on. Reconcile ranges with the
+others before resubmitting a batch full of gaps, or you will duplicate multi-day builds.
+
+There is **no way to tell from EOS who delivered a file**: it reports the *space owner*,
+so everything written into `/eos/user/a/acarvalh/...` is owned by `acarvalh` whoever ran
+the job. `mtime` doesn't help either. If attribution matters, agree the ranges up front,
+or have each person deliver to their own directory and merge afterwards.
+
+This is also a *live* view: a job that already failed and left the queue is a `gap` with
+no trace here, so check `logs/` for the reason (`Delivering` at the end of a `.out` with
+a `[3010] ... Permission denied` in the `.err` is the classic expired-proxy delivery
+failure).
+
+Skip the queue read with `--no-queue` (offline, or no proxy) — those four columns then
+read 0.
+
+### Resubmitting the gaps
+`--gaps` collapses the gap indices into contiguous runs and **prints** the commands —
+it submits nothing:
+
+```bash
+./report_batches.sh --batches <(echo "1901 2000") --gaps
+```
+```
+gaps: 17 point(s) in 7 contiguous run(s)
+  1901-1908, 1913-1915, 1935, 1944-1945, 1952, 1960, 1962
+
+>> resubmit commands (run from …/MYOMC/gridpack):
+   ./submit_smeft.sh --start 1901 --end 1908 --only-missing
+   ./submit_smeft.sh --start 1913 --end 1915 --only-missing
+   …
+```
+
+`--resubmit-gaps` runs them, after showing the list and asking for confirmation
+(`--yes` skips the prompt; with no tty it aborts rather than submitting):
+
+```bash
+./report_batches.sh --batches <(echo "1901 2000") --resubmit-gaps
+```
+
+#### Resubmitting with a one-week wall
+`--week` (= `--flavour nextweek`, 168 h) is appended to every emitted command. Use it
+for the `card=yes, log=no` gaps above — the ones that most likely died at a shorter
+wall — and for the expensive class in general (`CuH≠0` **and** `CHG≠0`: median ~56 h,
+p95 ~107 h, max ~154 h, so ~4% overrun a 72 h `testmatch`):
+
+```bash
+# the 1901-2000 gaps: carded, no logs -> wall suspects. Look first:
+./report_batches.sh --batches <(echo "1901 2000") --gaps --week
+```
+```
+gaps: 17 point(s) in 7 contiguous run(s)
+  1901-1908, 1913-1915, 1935, 1944-1945, 1952, 1960, 1962
+
+>> resubmit commands (run from …/MYOMC/gridpack):
+   ./submit_smeft.sh --start 1901 --end 1908 --only-missing --flavour nextweek
+   ./submit_smeft.sh --start 1913 --end 1915 --only-missing --flavour nextweek
+   …
+```
+```bash
+# how many jobs would this actually queue?  submits nothing
+./report_batches.sh --batches <(echo "1901 2000") --resubmit-gaps --week --dry-run
+```
+```
+>> resubmit commands (run from …/MYOMC/gridpack):
+   ./submit_smeft.sh --start 1901 --end 1908 --only-missing --flavour nextweek
+   …
+>> DRY RUN: would submit 17 job(s) in 7 batch(es). Nothing submitted.
+```
+```bash
+# then actually submit them
+./report_batches.sh --batches <(echo "1901 2000") --resubmit-gaps --week
+```
+
+**The job count equals the gap count** -- the runs are collapsed from *consecutive* gap
+indices, so a non-gap point can never sit inside one (it would have broken the run).
+Between the dry-run and the real submit the number can only **shrink**, never grow:
+`--only-missing` re-checks EOS and drops whatever finished in the meantime.
+
+Any other flavour works too: `--flavour tomorrow`, `--flavour testmatch`.
+
+Every emitted command keeps `--only-missing`, so a point that completes between the
+report and the submit is dropped at submit time. The runs are contiguous spans that
+exclude your running/idle/held points, but `--only-missing` does **not** consult the
+queue — it only re-checks EOS.
+
+⚠️ Read the shared-directory warning above before using `--resubmit-gaps` on a large
+range: gaps include points a colleague may already be building, and an expensive point
+is a ~56h 4-core build. `--gaps` first, then decide.
+
+Point it at a different driver with `--submitter <path>` (default `../gridpack/submit_smeft.sh`).
 
 Options — all optional, all read-only:
 
@@ -78,9 +206,19 @@ Options — all optional, all read-only:
 | `--points`  | (from `--grid`) | explicit JSON; overrides `--grid` |
 | `--gpdir`   | (from `--grid`) | explicit gridpack dir; overrides `--grid` |
 | `--nanodir` | `…/smeft_nanogen` | **must match the `--outdir` you submitted with** |
+| `--no-queue` | — | skip the `condor_q` read; run/idle/held/gap read 0 |
 | `--njobs`   | `5` | keep in sync with `NJOBS_PER_POINT` in `submit_nanogen.sh` |
 | `--batches` | (built-in layout) | file of `start stop` lines — your own row split |
 | `--chunk`   | — | uniform blocks of N points instead of the built-in layout |
+| `--gaps`    | — | print the resubmit commands for the gaps; **submits nothing** |
+| `--resubmit-gaps` | — | run them, after a confirmation prompt |
+| `--dry-run` (`-n`) | — | with `--resubmit-gaps`: print the job count only, submit nothing |
+| `--yes` (`-y`) | — | skip the confirmation prompt |
+| `--week`    | — | append `--flavour nextweek` (168 h wall) to the emitted commands |
+| `--flavour` | — | any flavour: `tomorrow`, `testmatch`, `nextweek` |
+| `--submitter` | `../gridpack/submit_smeft.sh` | driver used by `--resubmit-gaps` |
+| `--carddir` | `../gridpack/cards_prod` | where the `card` column looks |
+| `--logdir`  | `"../gridpack/logs ../../condor/logs"` | dirs the `log` column searches |
 
 ```bash
 ./report_batches.sh --grid 4d          # the 4D grid + its gridpack dir
