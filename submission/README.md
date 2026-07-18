@@ -22,6 +22,7 @@ fragments/<point>.py            <->  <point>_gridpack.tar.gz   (on EOS)
 | `submit_nanogen.sub` | HTCondor submit description (one job per `point,jobidx`) |
 | `submit_crab.sh`     | **crab** backend: build a cmsRun cfg per point, write a `PrivateMC` CRAB config, `crab submit` |
 | `submit_nanogen.sh`  | driver (both backends): gen fragments → condor `joblist.txt` **or** CRAB tasks |
+| `report_batches.sh`  | read-only progress table: gridpacks + NANOGEN ready, per index batch |
 
 ## Grid proxy
 Jobs xrdcp gridpacks from EOS (and NANOGEN back), so they need a grid proxy. The driver
@@ -49,6 +50,56 @@ cd /afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/submission
 ```
 `--start/--end` are **1-based inclusive**, identical to the gridpack driver
 `condor/submit_smeft.sh`. Monitor with `condor_q`; logs land in `logs/`.
+
+## Progress report (`report_batches.sh`)
+Read-only. Prints, per index batch, how many **gridpacks** and how many **NANOGEN**
+files are on EOS — i.e. what is ready to run nanogen on, and what is already done:
+
+```bash
+cd /afs/cern.ch/work/a/acarvalh/generation_k4/MYOMC/submission
+./report_batches.sh
+```
+```
+ start   stop   pts |     gridpacks |   nanogen files |   points w/ full nanogen
+  1701   1800   100 |     100/100 * |       500/500 * |                100/100 *
+  1801   1900   100 |     100/100 * |         0/500   |                  0/100
+  1901   2000   100 |      74/100   |         0/500   |                  0/100
+```
+A `*` marks a **complete** cell. A star in the *gridpacks* column means the batch is
+ready for `submit_nanogen.sh`; a star in the last column means the batch is finished.
+That last column counts points with a complete set of `--njobs` files — a point with
+3/5 is still short, and a re-submit tops it up (the driver skips `gjob`s that exist).
+
+Options — all optional, all read-only:
+
+| flag | default | note |
+|------|---------|------|
+| `--grid`    | `5d` | `4d`\|`5d`: picks the JSON **and** its gridpack dir together |
+| `--points`  | (from `--grid`) | explicit JSON; overrides `--grid` |
+| `--gpdir`   | (from `--grid`) | explicit gridpack dir; overrides `--grid` |
+| `--nanodir` | `…/smeft_nanogen` | **must match the `--outdir` you submitted with** |
+| `--njobs`   | `5` | keep in sync with `NJOBS_PER_POINT` in `submit_nanogen.sh` |
+
+```bash
+./report_batches.sh --grid 4d          # the 4D grid + its gridpack dir
+
+# if you submitted nanogen somewhere else, point the report at it
+./report_batches.sh --nanodir root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_5d
+```
+`--points` and `--gpdir` override `--grid` individually, but the JSON and the gridpack
+dir must describe the **same** grid — mismatch them and every index silently maps to
+the wrong point. Prefer `--grid`, which keeps the pair together (as `submit_nanogen.sh`
+does). The batch ranges are 5D-sized; on `--grid 4d` the tail batches read `0/…`.
+
+Two counting traps the script handles, worth knowing if you ever count by hand:
+EOS keeps **versioned shadow copies** named `.sys.v#.<name>` that also end in
+`_gridpack.tar.gz` (counting them roughly doubles the total), and NANOGEN files
+live in **per-point subfolders**, so the nanogen listing must be recursive
+(`xrdfs ls -R`) or it reads 0.
+
+⚠️ A truncated `xrdfs ls` returns a short listing with **exit status 0** — it looks
+like a normal, smaller result. If a batch drops from one run to the next, suspect
+the listing before you suspect lost files, and re-run.
 
 ## Backends: HTCondor (default) vs CRAB
 Pick with `--backend condor|crab`. Same fragments, same point selection, same
