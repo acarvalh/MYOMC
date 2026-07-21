@@ -3,7 +3,8 @@
 #   ./report_batches.sh [--grid 4d|5d|9d] [--points <json>] [--gpdir <url>]
 #                       [--nanodir <url>] [--njobs <n>]
 #                       [--batches <file>] [--chunk <n>] [--no-queue]
-#                       [--gaps] [--resubmit-gaps [--yes|--dry-run]] [--week|--flavour X]
+#                       [--others u1,u2] [--gaps]
+#                       [--resubmit-gaps [--yes|--dry-run]] [--week|--flavour X]
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -26,6 +27,10 @@ POINTS=""                                      # explicit JSON; overrides --grid
 GPDIR=""                                       # explicit dir;  overrides --grid
 NJOBS=5                                        # nanogen jobs/point; must match submit_nanogen.sh
 QUEUE=1                                        # read condor_q (--no-queue to skip)
+OTHERS=""                                       # --others u1,u2: also count these owners' gridpack jobs
+                                               # (pool-wide condor_q -global -allusers). A point they are
+                                               # building then shows in an 'oth' column instead of 'gap',
+                                               # and is EXCLUDED from --resubmit-gaps so we don't step on it.
 GAPS=0                                         # --gaps: print resubmit commands
 RESUBMIT=0                                     # --resubmit-gaps: run them (asks first)
 ASSUME_YES=0                                   # --yes: skip the confirmation
@@ -37,7 +42,7 @@ LOGDIRS="$HERE/../gridpack/logs $HERE/../../condor/logs"   # searched for <point
 BATCHFILE=""                                   # file of "start stop" lines
 CHUNK=""                                       # uniform blocks of N points
 
-usage() { sed -n "2,6p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
+usage() { sed -n "2,7p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -49,6 +54,7 @@ while [ $# -gt 0 ]; do
     --batches) BATCHFILE=$2; shift 2;;
     --chunk)   CHUNK=$2;     shift 2;;
     --no-queue) QUEUE=0;     shift 1;;
+    --others)   OTHERS=$2;   shift 2;;
     --gaps)          GAPS=1;       shift 1;;
     --resubmit-gaps) RESUBMIT=1;   shift 1;;
     --yes|-y)        ASSUME_YES=1; shift 1;;
@@ -101,6 +107,23 @@ if [ "$QUEUE" = 1 ]; then
            -af JobStatus Args > "$TMP/q.txt" 2>/dev/null || true
 fi
 
+# --others u1,u2: also read those owners' gridpack jobs, pool-wide (-global -allusers),
+# so a point THEY are building is not miscounted as a gap of mine. Each line of oth.txt is
+# "<owner>\t<point>"; any of their job states (idle/run/held) counts as "in progress", and
+# the owner drives the 'runner' column.
+: > "$TMP/oth.txt"
+if [ -n "$OTHERS" ] && [ "$QUEUE" = 1 ]; then
+  owner_expr=$(printf '%s' "$OTHERS" | tr ',' '\n' | sed '/^$/d;s/.*/Owner=="&"/' | paste -sd '|' | sed 's/|/ || /g')
+  if [ -n "$owner_expr" ]; then
+    echo ">> reading colleagues' gridpack jobs (pool-wide): $OTHERS"
+    condor_q -global -allusers \
+      -constraint "regexp(\"run_smeft_gridpack.sh\", Cmd) && ($owner_expr)" \
+      -af Owner Args 2>/dev/null | awk 'NF>=2{a=$2; sub(/\.input$/,"",a); print $1"\t"a}' \
+      > "$TMP/oth.txt" || true
+  fi
+fi
+export OTH_F="$TMP/oth.txt" OTHERS
+
 if [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ]; then EMIT_GAPS=1; else EMIT_GAPS=0; fi
 export EMIT_GAPS GAPS_OUT="$TMP/gaps.txt" FLAVOUR DRYRUN
 
@@ -129,6 +152,19 @@ pts   = json.load(open(points_f))
 gp    = {l.strip() for l in open(gp_f)   if l.strip()}
 nano  = {l.strip() for l in open(nano_f) if l.strip()}
 N     = len(pts)
+
+# Points other submitters (--others) are building, pool-wide. A point here is treated
+# as "in progress elsewhere": counted in the 'oth' column, named in the 'runner' column,
+# kept out of 'gap', and never emitted for --resubmit-gaps. owner_of[point] = the owner
+# building it (first seen wins if two colleagues race the same point -- rare).
+oth_f = os.environ.get("OTH_F", "")
+owner_of = {}
+if oth_f and os.path.exists(oth_f):
+    for l in open(oth_f):
+        parts = l.rstrip("\n").split("\t")
+        if len(parts) == 2 and parts[1]:
+            owner_of.setdefault(parts[1], parts[0])
+others = set(owner_of)
 
 # point name -> {1:idle, 2:running, 5:held}; a point may hold >1 job (a resubmit)
 queue = {}
@@ -212,20 +248,34 @@ def yesno(have, total):
     if have == 0:     return "no"
     return f"{have}/{total}"
 
+# The 'oth' count + 'runner' name columns (points a colleague is building) only appear
+# with --others, so the default table is byte-identical to before.
+OTHCOL = bool(others)
+RUNW = 18                                   # width of the trailing 'runner' column
+oth_h = f"{'oth':>4} " if OTHCOL else ""
+run_h = f" | {'runner':<{RUNW}}" if OTHCOL else ""
 hdr = (f"{'start':>6} {'stop':>6} {'pts':>5} | {'gridpacks':>13} | "
-       f"{'run':>4} {'idle':>4} {'held':>4} {'gap':>4} {'card':>5} {'log':>5} | "
-       f"{'nanogen files':>15} | {'full':>11}")
+       f"{'run':>4} {'idle':>4} {'held':>4} {oth_h}{'gap':>4} {'card':>5} {'log':>5} | "
+       f"{'nanogen files':>15} | {'full':>11}{run_h}")
 print(hdr); print("-"*len(hdr))
+
+def runner_cell(owners):
+    """Comma-joined distinct owners of a batch's 'oth' points, truncated to the column."""
+    s = ",".join(sorted(owners))
+    if len(s) > RUNW: s = s[:RUNW-1] + "…"
+    return f" | {s:<{RUNW}}" if OTHCOL else ""
 
 def cell(done, total, width):
     """'  99/100  ' right-aligned in `width`, suffixed with * when complete."""
     return f"{done}/{total}".rjust(width) + (" *" if done == total else "  ")
 
-tp=tg=tn=tf=tr=ti=th=tx=0; tgc=tgl=0
+tp=tg=tn=tf=tr=ti=th=tx=to=0; tgc=tgl=0
+all_owners = set()
 for lo,hi in BATCHES:
     n = hi-lo+1
-    g = f = nf = r = idle = held = gap = 0
+    g = f = nf = r = idle = held = gap = oth = 0
     gap_card = gap_log = 0
+    owners = set()                           # colleagues building points IN THIS batch
     for i in range(lo,hi+1):
         name = point_name(pts[i-1])
         have = name+"_gridpack.tar.gz" in gp
@@ -234,9 +284,12 @@ for lo,hi in BATCHES:
         # A delivered point may still show a job (a stale resubmit); count queue
         # state only for points we do NOT yet have, so the columns explain the gap.
         if not have:
-            if   2 in st: r    += 1
-            elif 1 in st: idle += 1
-            elif 5 in st: held += 1
+            if   2 in st: r    += 1          # my running job
+            elif 1 in st: idle += 1          # my idle job
+            elif 5 in st: held += 1          # my held job
+            elif name in others:             # a colleague (--others) is building it
+                oth += 1
+                owners.add(owner_of[name])
             else:
                 gap += 1                     # no file, no job: never submitted/lost
                 if name in cards: gap_card += 1
@@ -244,20 +297,27 @@ for lo,hi in BATCHES:
         c = sum(1 for j in range(1,njobs+1) if f"NANOGEN_{name}_{j}.root" in nano)
         nf += c
         if c == njobs: f += 1
-    tp+=n; tg+=g; tn+=nf; tf+=f; tr+=r; ti+=idle; th+=held; tx+=gap
-    tgc+=gap_card; tgl+=gap_log
+    tp+=n; tg+=g; tn+=nf; tf+=f; tr+=r; ti+=idle; th+=held; tx+=gap; to+=oth
+    tgc+=gap_card; tgl+=gap_log; all_owners |= owners
+    oth_c = f"{oth:>4} " if OTHCOL else ""
     print(f"{lo:>6} {hi:>6} {n:>5} | {cell(g,n,11)} | "
-          f"{r:>4} {idle:>4} {held:>4} {gap:>4} "
+          f"{r:>4} {idle:>4} {held:>4} {oth_c}{gap:>4} "
           f"{yesno(gap_card,gap):>5} {yesno(gap_log,gap):>5} | "
-          f"{cell(nf,n*njobs,13)} | {cell(f,n,9)}")
+          f"{cell(nf,n*njobs,13)} | {cell(f,n,9)}{runner_cell(owners)}")
 
 print("-"*len(hdr))
+oth_t = f"{to:>4} " if OTHCOL else ""
 print(f"{'TOTAL':>13} {tp:>5} | {cell(tg,tp,11)} | "
-      f"{tr:>4} {ti:>4} {th:>4} {tx:>4} "
+      f"{tr:>4} {ti:>4} {th:>4} {oth_t}{tx:>4} "
       f"{yesno(tgc,tx):>5} {yesno(tgl,tx):>5} | "
-      f"{cell(tn,tp*njobs,13)} | {cell(tf,tp,9)}")
+      f"{cell(tn,tp*njobs,13)} | {cell(tf,tp,9)}{runner_cell(all_owners)}")
 print("\n* = complete.  run/idle/held/gap count points with NO gridpack yet:")
-print("  gap = no file and no job of mine -- never submitted, lost, or someone else's.")
+if OTHCOL:
+    print(f"  oth = a colleague ({os.environ.get('OTHERS','')}) has a gridpack job for it "
+          "(pool-wide) -- excluded from gap and from --resubmit-gaps.")
+    print("  gap = no file and NO job of mine OR of the --others owners.")
+else:
+    print("  gap = no file and no job of mine -- never submitted, lost, or someone else's.")
 print("  held jobs need condor_rm + resubmit; check: condor_q -constraint 'JobStatus==5' -af HoldReason")
 print("  card/log = do the GAP points have a card / a condor .out?  yes | no | n/total")
 print("    no card          -> never submitted (cards are written at submit time)")
@@ -271,7 +331,8 @@ if os.environ.get("EMIT_GAPS") == "1":
     for lo, hi in BATCHES:
         for i in range(lo, hi+1):
             name = point_name(pts[i-1])
-            if name+"_gridpack.tar.gz" not in gp and name not in queue:
+            if (name+"_gridpack.tar.gz" not in gp
+                    and name not in queue and name not in others):
                 gaps.append(i)
     gaps = sorted(set(gaps))
     runs = []
