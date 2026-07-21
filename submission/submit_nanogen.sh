@@ -31,14 +31,21 @@ START=0                                     # first point, 1-based inclusive (0 
 END=0                                       # last point, 1-based inclusive (0 = end)
 FRAGDIR=$HERE/fragments                      # where generated fragments go
 # Grid selection: --grid picks which BUNDLED points JSON drives fragment names AND the
-# matching default gridpack set. 4d = leading-only (no CtG, names omit _CtG_); 5d =
-# leading + CtG. Fragment names must match the gridpack names, so the two are paired.
-GRID=5d                                      # 4d | 5d
+# matching default gridpack set + nanogen output dir. 4d = leading-only (no CtG, names
+# omit _CtG_); 5d = leading + CtG; 9d = leading + CtG + the four four-top operators (the
+# 9D extension). Fragment names must match the gridpack names, so grid, gridpack dir and
+# nanogen output dir are paired. For 9d everything lives under smeft_nanogen_9d/.
+GRID=5d                                      # 4d | 5d | 9d
 POINTS=""                                    # explicit points JSON; overrides --grid
 GPDIR_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
 GPDIR_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1
+GPDIR_9D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_9d/gridpacks
+# Nanogen output dir per grid: 4d/5d share the original smeft_nanogen; 9d is self-contained.
+NANO_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+NANO_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+NANO_9D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_9d/nanogen
 GRIDPACK_DIR=""                              # empty => derive from --grid; --gridpack-dir overrides
-OUTPUT_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+OUTPUT_DIR=""                                # empty => derive from --grid; --outdir overrides
 RUN_SH=$MYOMC/campaigns/NANOGEN/run.sh
 # Fix-files shipped into every job so run_nanogen.sh can self-heal the staged
 # gridpack (older assemblies shipped WITHOUT creategrid.py and with an unpatched
@@ -113,14 +120,16 @@ case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&
 # explicit --points / --gridpack-dir overrides the derived default. Fragment names are
 # built from $POINTS (see make_fragments.py), so $POINTS must match $GRIDPACK_DIR.
 case "$GRID" in
-  4d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json; GRID_GPDIR=$GPDIR_4D;;
-  5d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json;        GRID_GPDIR=$GPDIR_5D;;
-  *)  echo "--grid must be 4d or 5d" >&2; exit 1;;
+  4d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json; GRID_GPDIR=$GPDIR_4D; GRID_NANO=$NANO_4D;;
+  5d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json;        GRID_GPDIR=$GPDIR_5D; GRID_NANO=$NANO_5D;;
+  9d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_9D_extension_only.json;          GRID_GPDIR=$GPDIR_9D; GRID_NANO=$NANO_9D;;
+  *)  echo "--grid must be 4d, 5d or 9d" >&2; exit 1;;
 esac
 [ -n "$POINTS" ]       || POINTS=$GRID_JSON
 [ -n "$GRIDPACK_DIR" ] || GRIDPACK_DIR=$GRID_GPDIR
+[ -n "$OUTPUT_DIR" ]   || OUTPUT_DIR=$GRID_NANO
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
-echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR"
+echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
 
 # --test: quick single-job smoke test on the FIRST gridpack-ready point in the
 # selection. Force 100 events in ONE job, and (below) queue only that one point.

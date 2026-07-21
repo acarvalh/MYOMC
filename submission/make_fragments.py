@@ -19,8 +19,10 @@ import json
 import os
 
 # Same coefficients and filename encoding as makeSMEFTCards.py, so a fragment's
-# name matches its gridpack: <point>.py  <->  <point>_gridpack.tar.gz
-COEFFS = ["CHbox", "CH", "CuH", "CHG", "CtG"]
+# name matches its gridpack: <point>.py  <->  <point>_gridpack.tar.gz. point_name()
+# below only emits the coefficients actually present in a point, so this longer 9D
+# list stays backward compatible with 4D/5D points (which lack the extra keys).
+COEFFS = ["CHbox", "CH", "CuH", "CHG", "CtG", "CQt", "CQt8", "CQQtt", "CQQ8"]
 
 
 def frmt(value):
@@ -29,9 +31,10 @@ def frmt(value):
 
 
 def point_name(point):
-    # Include only the coefficients present in the point: a 5D grid point carries all
-    # of COEFFS (…_CtG_…); a 4D grid point has no CtG key, so its name omits _CtG_ and
-    # matches the 4D gridpack filenames. Same encoding as makeSMEFTCards.py.
+    # Include only the coefficients present in the point, in COEFFS order: a 4D point
+    # (leading only) omits _CtG_ and the four-fermion keys; a 5D point adds _CtG_; a 9D
+    # point carries all nine. Absent keys are simply skipped, so the same function names
+    # every grid and matches its gridpack filename. Same encoding as makeSMEFTCards.py.
     return "powheg_ggHH_SMEFT_" + "_".join(
         f"{k}_{frmt(point[k])}" for k in COEFFS if k in point)
 

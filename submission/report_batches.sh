@@ -1,6 +1,6 @@
 #!/bin/bash
 # Print a per-batch table of how many gridpacks and nanogen files are ready on EOS.
-#   ./report_batches.sh [--grid 4d|5d] [--points <json>] [--gpdir <url>]
+#   ./report_batches.sh [--grid 4d|5d|9d] [--points <json>] [--gpdir <url>]
 #                       [--nanodir <url>] [--njobs <n>]
 #                       [--batches <file>] [--chunk <n>] [--no-queue]
 #                       [--gaps] [--resubmit-gaps [--yes|--dry-run]] [--week|--flavour X]
@@ -12,10 +12,16 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GRID=5d
 JSON_4D=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json
 JSON_5D=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json
+JSON_9D=$HERE/FINALgrid_for_SMEFT_9D_extension_only.json
 GPDIR_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
 GPDIR_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1
+GPDIR_9D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_9d/gridpacks
+# nanogen dir per grid: 4d/5d share smeft_nanogen; 9d is self-contained under smeft_nanogen_9d.
+NANODIR_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+NANODIR_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+NANODIR_9D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_9d/nanogen
 
-NANODIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen
+NANODIR=""                                     # empty => derive from --grid; --nanodir overrides
 POINTS=""                                      # explicit JSON; overrides --grid
 GPDIR=""                                       # explicit dir;  overrides --grid
 NJOBS=5                                        # nanogen jobs/point; must match submit_nanogen.sh
@@ -58,12 +64,15 @@ while [ $# -gt 0 ]; do
 done
 
 case $GRID in
-  4d) GRID_JSON=$JSON_4D; GRID_GPDIR=$GPDIR_4D;;
-  5d) GRID_JSON=$JSON_5D; GRID_GPDIR=$GPDIR_5D;;
-  *)  echo "--grid must be 4d or 5d (got '$GRID')" >&2; exit 1;;
+  4d) GRID_JSON=$JSON_4D; GRID_GPDIR=$GPDIR_4D; GRID_NANO=$NANODIR_4D;;
+  5d) GRID_JSON=$JSON_5D; GRID_GPDIR=$GPDIR_5D; GRID_NANO=$NANODIR_5D;;
+  9d) GRID_JSON=$JSON_9D; GRID_GPDIR=$GPDIR_9D; GRID_NANO=$NANODIR_9D;;
+  *)  echo "--grid must be 4d, 5d or 9d (got '$GRID')" >&2; exit 1;;
 esac
 POINTS=${POINTS:-$GRID_JSON}
 GPDIR=${GPDIR:-$GRID_GPDIR}
+NANODIR=${NANODIR:-$GRID_NANO}
+export GRID
 [ -f "$POINTS" ] || { echo "points JSON not found: $POINTS" >&2; exit 1; }
 
 export X509_USER_PROXY=${X509_USER_PROXY:-$HOME/private/x509up}
@@ -142,9 +151,25 @@ BATCHES_5D = [(1701,1800),(1801,1900),(1901,2000),(2001,2050),(2051,2150),
               (601,700),(701,800),(801,900),(901,1000),(1001,1100),(1101,1200),
               (1201,1300),(1301,1400),(1401,1500),(1501,1600),(1601,1696)]
 
+# 9D extension (2000 points): each 2D plane is its OWN batch (points 1..832 -- the four
+# four-top operators crossed with the leading operators, CtG, and each other), then the
+# fully-mixed 9D region (833..2000, all nine coeffs non-zero) in blocks of 50. Derived
+# from the grid structure (see submission/batches_9d.txt for the plane labels); keep the
+# two in sync if the JSON changes.
+BATCHES_9D = [(1,40),(41,80),(81,120),(121,160),(161,180),(181,220),
+              (221,260),(261,300),(301,340),(341,360),(361,400),(401,440),
+              (441,480),(481,520),(521,540),(541,580),(581,620),(621,660),
+              (661,700),(701,720),(721,744),(745,764),(765,784),(785,800),
+              (801,816),(817,832),(833,882),(883,932),(933,982),(983,1032),
+              (1033,1082),(1083,1132),(1133,1182),(1183,1232),(1233,1282),(1283,1332),
+              (1333,1382),(1383,1432),(1433,1482),(1483,1532),(1533,1582),(1583,1632),
+              (1633,1682),(1683,1732),(1733,1782),(1783,1832),(1833,1882),(1883,1932),
+              (1933,1982),(1983,2000)]
+
 def uniform(n, size):
     return [(s, min(s+size-1, n)) for s in range(1, n+1, size)]
 
+grid = os.environ.get("GRID", "5d")
 if batchfile:
     BATCHES = []
     for ln, raw in enumerate(open(batchfile), 1):
@@ -159,7 +184,9 @@ if batchfile:
     if not BATCHES: sys.exit(f"{batchfile}: no ranges found")
 elif chunk:
     BATCHES = uniform(N, chunk)
-elif max(b for _, b in BATCHES_5D) <= N:
+elif grid == "9d" and max(b for _, b in BATCHES_9D) <= N:
+    BATCHES = BATCHES_9D               # 2D planes each in their own batch, then mixed/50
+elif grid != "9d" and max(b for _, b in BATCHES_5D) <= N:
     BATCHES = BATCHES_5D
 else:
     BATCHES = uniform(N, 100)          # e.g. the 4D grid: default layout overshoots
@@ -253,9 +280,12 @@ if os.environ.get("EMIT_GAPS") == "1":
         else: runs.append([i, i])
     flav = os.environ.get("FLAVOUR", "")
     extra = f" --flavour {flav}" if flav else ""
+    # Carry the grid through so the submitter builds the right cards AND writes to the
+    # matching gridpack dir (submit_smeft.sh defaults to 5d otherwise).
+    gsel = f"--grid {grid} "
     with open(os.environ["GAPS_OUT"], "w") as fh:
         for a, b in runs:
-            fh.write(f"--start {a} --end {b} --only-missing{extra}\n")
+            fh.write(f"{gsel}--start {a} --end {b} --only-missing{extra}\n")
     print(f"\ngaps: {len(gaps)} point(s) in {len(runs)} contiguous run(s)")
     if gaps:
         print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in runs))

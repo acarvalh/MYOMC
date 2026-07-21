@@ -24,8 +24,22 @@ NCARDS=3                                   # how many JSON points (0 = all); ign
 START=0                                     # first point, 1-based inclusive (0 = beginning)
 END=0                                       # last point, 1-based inclusive (0 = end)
 CARDDIR=$GEN_DIR/cards_prod                # where generated cards go
+# Grid selection: --grid picks the BUNDLED points JSON that drives card generation AND
+# the matching EOS gridpack output dir. They are paired: card/gridpack names are built
+# from the JSON, so JSON and output dir must stay together. 4d = leading only; 5d =
+# leading + CtG; 9d = leading + CtG + the four four-top operators (the 9D extension,
+# gridpacks under smeft_nanogen_9d/gridpacks). --points / --outdir override the derived value.
+GRID=5d                                     # 4d | 5d | 9d
+SUBDIR=$GEN_DIR/../submission                # where the bundled points JSONs live
+JSON_4D=$SUBDIR/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json
+JSON_5D=$SUBDIR/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json
+JSON_9D=$SUBDIR/FINALgrid_for_SMEFT_9D_extension_only.json
+OUTDIR_4D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_keep_stage1
+OUTDIR_5D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1
+OUTDIR_9D=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_nanogen_9d/gridpacks
+POINTS=""                                   # explicit points JSON; overrides --grid
 # EOS via xrootd: robust on worker nodes where /eos isn't fuse-mounted.
-OUTPUT_DIR=root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1
+OUTPUT_DIR=""                               # empty => derive from --grid; --outdir overrides
 # The 55 MB compiled process tarball (pwhg_main binary + Virtual/creategrid.py +
 # testrun/run.sh) is NOT committed (binary blob). It is HOSTED on EOS, so a fresh
 # clone works out of the box — run_smeft_gridpack.sh xrdcp's this URL on the node.
@@ -67,6 +81,8 @@ while [ $# -gt 0 ]; do
     --start)   START=$2; shift 2;;
     --end)     END=$2; shift 2;;
     --carddir) CARDDIR=$2; shift 2;;
+    --grid)    GRID=$2; shift 2;;
+    --points)  POINTS=$2; shift 2;;
     --outdir)  OUTPUT_DIR=$2; shift 2;;
     --process-tarball) PROCESS_TARBALL=$2; shift 2;;
     --ncores)  NCORES=$2; shift 2;;
@@ -83,6 +99,16 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
+
+# Resolve --grid into the points JSON + gridpack output dir. --points / --outdir win.
+case "$GRID" in
+  4d) [ -n "$POINTS" ] || POINTS=$JSON_4D; [ -n "$OUTPUT_DIR" ] || OUTPUT_DIR=$OUTDIR_4D;;
+  5d) [ -n "$POINTS" ] || POINTS=$JSON_5D; [ -n "$OUTPUT_DIR" ] || OUTPUT_DIR=$OUTDIR_5D;;
+  9d) [ -n "$POINTS" ] || POINTS=$JSON_9D; [ -n "$OUTPUT_DIR" ] || OUTPUT_DIR=$OUTDIR_9D;;
+  *)  echo "--grid must be 4d, 5d or 9d (got '$GRID')" >&2; exit 1;;
+esac
+[ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
+echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$OUTPUT_DIR"
 
 # --test: prove the WHOLE pipeline (warmup -> stages 1-4 -> gridpack assembly ->
 # EOS delivery) on the FIRST selected point in minutes, with coarse integration
@@ -127,10 +153,10 @@ mkdir -p logs "$CARDDIR"
 mkdir -p "$CARDDIR"
 if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
   echo ">> generating cards (points $START..$END, 1-based inclusive) into $CARDDIR"
-  python3 "$GEN_DIR/makeSMEFTCards.py" --outdir "$CARDDIR" --start "$START" --end "$END"
+  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --start "$START" --end "$END"
 else
   echo ">> generating cards (nmax=$NCARDS) into $CARDDIR"
-  python3 "$GEN_DIR/makeSMEFTCards.py" --outdir "$CARDDIR" --nmax "$NCARDS"
+  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --nmax "$NCARDS"
 fi
 
 # This run's card tags, from the manifest just written (the selected points only).

@@ -17,9 +17,17 @@ import os
 import re
 
 # Wilson coefficients we substitute from the JSON. CHD is left at its template
-# value (it is not part of the leading-operator grid). CtG (chromomagnetic
-# operator) is the 5th coupling of the 5D leading+ctg grid.
-COEFFS = ["CHbox", "CH", "CuH", "CHG", "CtG"]
+# value (it is not part of the operator grid). The list is grid-agnostic: only the
+# coefficients actually PRESENT in a point are substituted / put in its name, so a
+# 4D point (leading only), a 5D point (+CtG) and a 9D point (+CtG + the four-fermion
+# operators) all keep the same encoding for their shared coefficients.
+#   LEADING     : always at Born, enter regardless of includesubleading.
+#   SUBLEADING  : CtG (chromomagnetic) + the four four-top operators. They only enter
+#                 the ME when includesubleading is on, so it is turned on iff any of
+#                 them is non-zero in the point (see below).
+LEADING = ["CHbox", "CH", "CuH", "CHG"]
+SUBLEADING = ["CtG", "CQt", "CQt8", "CQQtt", "CQQ8"]
+COEFFS = LEADING + SUBLEADING
 
 
 def frmt(value):
@@ -86,31 +94,36 @@ def main():
     for j, point in enumerate(points):
         i = offset + j  # absolute index into the original JSON
         card = base  # template already sets usesmeft 1 + SMEFTtruncation 1
-        # CtG is a SUBLEADING operator: it only enters the ME when subleading
-        # operators are enabled. includesubleading 1 = loop power counting so
-        # C_tG enters linearly (option 2 is bornonly-only). Valid with
-        # SMEFTtruncation 1. But enabling subleading operators costs extra grid
-        # integration, so ONLY turn it on when this point actually uses CtG;
-        # when CtG == 0 it reduces to the 4D physics and we leave subleading
-        # off (0) to save CPU.
-        card = set_param(card, "includesubleading", 1 if float(point["CtG"]) != 0 else 0)
+        # The SUBLEADING operators (CtG + the four four-top operators) only enter
+        # the ME when subleading operators are enabled. includesubleading 1 = loop
+        # power counting so they enter linearly (option 2 is bornonly-only). Valid
+        # with SMEFTtruncation 1. Enabling them costs extra grid integration, so we
+        # ONLY turn it on when this point actually uses at least one of them; a point
+        # with all subleading == 0 reduces to the leading (4D) physics and we leave
+        # subleading off (0) to save CPU.
+        use_subleading = any(float(point.get(k, 0)) != 0 for k in SUBLEADING)
+        card = set_param(card, "includesubleading", 1 if use_subleading else 0)
         for key in COEFFS:
-            card = set_param(card, key, point[key])
+            if key in point:                     # leave absent coeffs at their template value (0)
+                card = set_param(card, key, point[key])
         # 13.6 TeV (Run 3) beams
         card = set_param(card, "ebeam1", 6800)
         card = set_param(card, "ebeam2", 6800)
-        name = "powheg_ggHH_SMEFT_" + "_".join(f"{k}_{frmt(point[k])}" for k in COEFFS)
+        name = "powheg_ggHH_SMEFT_" + "_".join(
+            f"{k}_{frmt(point[k])}" for k in COEFFS if k in point)
         path = os.path.join(args.outdir, name + ".input")
         with open(path, "w") as wf:
             wf.write(card)
-        manifest.append({"index": i, "name": name, **{k: point[k] for k in COEFFS}})
+        manifest.append({"index": i, "name": name,
+                         **{k: point[k] for k in COEFFS if k in point}})
 
     with open(os.path.join(args.outdir, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)
 
     print(f"Wrote {len(points)} cards to {args.outdir}")
     for m in manifest:
-        print(f"  {m['name']}: " + ", ".join(f"{k}={m[k]:+.6g}" for k in COEFFS))
+        print(f"  {m['name']}: " + ", ".join(
+            f"{k}={m[k]:+.6g}" for k in COEFFS if k in m))
 
 
 if __name__ == "__main__":
