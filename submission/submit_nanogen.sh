@@ -29,7 +29,10 @@ MYOMC=${MYOMC:-$(cd "$HERE/.." && pwd)}
 NCARDS=3                                    # how many points (0 = all); ignored if START/END set
 START=0                                     # first point, 1-based inclusive (0 = beginning)
 END=0                                       # last point, 1-based inclusive (0 = end)
-FRAGDIR=$HERE/fragments                      # where generated fragments go
+FRAGDIR=""                                   # empty => a UNIQUE per-run dir under $FRAGROOT (below);
+                                             # --fragdir pins an explicit one (then it IS wiped+reused)
+FRAGROOT=$HERE/fragments                      # parent of the per-run fragment dirs
+FRAG_KEEP_DAYS=4                              # prune per-run dirs older than this (> 72h testmatch wall)
 # Grid selection: --grid picks which BUNDLED points JSON drives fragment names AND the
 # matching default gridpack set + nanogen output dir. 4d = leading-only (no CtG, names
 # omit _CtG_); 5d = leading + CtG; 9d = leading + CtG + the four four-top operators (the
@@ -179,11 +182,26 @@ fi
 [ "$JOB_OFFSET" -gt 0 ] && echo ">> job-offset $JOB_OFFSET: this batch uses global jobs $(( JOB_OFFSET + 1 ))..$MAX_GJOB (fresh seed windows + output names)"
 
 cd "$HERE"
+
+# Per-run fragment dir: every submission gets its OWN dir, so a later run's fragment
+# regen can never delete an in-flight batch's input files. Condor transfers inputs at
+# match time (not submit time), and re-transfers on eviction, so an earlier range's
+# fragments must survive until ITS jobs finish -- sharing one dir + wiping it is what
+# held the last batch ("input file: No such file or directory"). With a private dir per
+# run, back-to-back resubmits are safe and need no drain wait. An explicit --fragdir
+# opts back into a single reused dir (then the wipe below applies to that dir only).
+if [ -z "$FRAGDIR" ]; then
+  FRAGDIR=$FRAGROOT/run_$(date -u +%Y%m%dT%H%M%SZ)_$$
+  # Prune old per-run dirs: a job can't outlive the 72h testmatch wall, so anything older
+  # than FRAG_KEEP_DAYS has no live jobs pointing at it. Only touches run_* subdirs (never
+  # loose fragments from an older single-dir submission that may still be in flight).
+  [ -d "$FRAGROOT" ] && find "$FRAGROOT" -mindepth 1 -maxdepth 1 -type d -name 'run_*' \
+       -mtime +"$FRAG_KEEP_DAYS" -exec rm -rf {} + 2>/dev/null || true
+fi
 mkdir -p logs "$FRAGDIR"
 
-# 1) Generate the per-point fragments (+ manifest.json). Wipe stale ones first:
-#    fragment names encode couplings, so a changed range yields NEW names that
-#    would otherwise pile up next to the old ones (-> extra jobs).
+# 1) Generate the per-point fragments (+ manifest.json). The dir is fresh (per-run) unless
+#    --fragdir pinned an existing one, so wipe stale files to be safe either way.
 #    CRAB embeds the fragment in the cfg, so it needs the xrootd gridpack path
 #    baked in (--gridpack-base); condor substitutes a local path at runtime.
 GP_BAKE=()

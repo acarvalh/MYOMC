@@ -5,6 +5,10 @@
 #                       [--batches <file>] [--chunk <n>] [--no-queue]
 #                       [--others u1,u2] [--gaps]
 #                       [--resubmit-gaps [--yes|--dry-run]] [--week|--flavour X]
+#                       [--resubmit-nano [--yes|--dry-run]]
+# --gaps PRINTS nanogen `submit_nanogen.sh ... --only-missing` commands for points with
+# missing NANOGEN files. --resubmit-nano RUNS them back-to-back; no drain wait is needed
+# because submit_nanogen.sh gives each run its own fragment dir (no shared-wipe race).
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -32,7 +36,10 @@ OTHERS=""                                       # --others u1,u2: also count the
                                                # building then shows in an 'oth' column instead of 'gap',
                                                # and is EXCLUDED from --resubmit-gaps so we don't step on it.
 GAPS=0                                         # --gaps: print resubmit commands
-RESUBMIT=0                                     # --resubmit-gaps: run them (asks first)
+RESUBMIT=0                                     # --resubmit-gaps: run GRIDPACK resubmits (asks first)
+RESUBMIT_NANO=0                                # --resubmit-nano: run NANOGEN --only-missing resubmits
+                                               # back-to-back. Safe with no drain wait because
+                                               # submit_nanogen.sh now gives each run its own fragment dir.
 ASSUME_YES=0                                   # --yes: skip the confirmation
 DRYRUN=0                                       # --dry-run: pass through to the driver
 SUBMITTER=$HERE/../gridpack/submit_smeft.sh    # driver used by --resubmit-gaps
@@ -42,7 +49,7 @@ LOGDIRS="$HERE/../gridpack/logs $HERE/../../condor/logs"   # searched for <point
 BATCHFILE=""                                   # file of "start stop" lines
 CHUNK=""                                       # uniform blocks of N points
 
-usage() { sed -n "2,7p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
+usage() { sed -n "2,11p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -57,6 +64,7 @@ while [ $# -gt 0 ]; do
     --others)   OTHERS=$2;   shift 2;;
     --gaps)          GAPS=1;       shift 1;;
     --resubmit-gaps) RESUBMIT=1;   shift 1;;
+    --resubmit-nano) RESUBMIT_NANO=1; shift 1;;
     --yes|-y)        ASSUME_YES=1; shift 1;;
     --dry-run|-n)    DRYRUN=1;     shift 1;;
     --submitter)     SUBMITTER=$2; shift 2;;
@@ -102,30 +110,42 @@ list_dir "$NANODIR" -R   > "$TMP/nano.txt"   # -R: files sit in <point>/ subfold
 # Only OUR jobs are visible here -- a colleague building the same point shows as
 # a gap, not as running. Empty file (no proxy / no schedd) => queue columns read 0.
 : > "$TMP/q.txt"
+: > "$TMP/nq.txt"
 if [ "$QUEUE" = 1 ]; then
   condor_q -constraint 'regexp("run_smeft_gridpack.sh", Cmd)' \
            -af JobStatus Args > "$TMP/q.txt" 2>/dev/null || true
+  # NANOGEN jobs: Args is "<point> <gjob>", and the job writes NANOGEN_<point>_<gjob>.root,
+  # so (point,gjob) keys the queue exactly like the file it will deliver.
+  condor_q -constraint 'regexp("run_nanogen.sh", Cmd)' \
+           -af JobStatus Args > "$TMP/nq.txt" 2>/dev/null || true
 fi
+export NQ_F="$TMP/nq.txt"
 
 # --others u1,u2: also read those owners' gridpack jobs, pool-wide (-global -allusers),
 # so a point THEY are building is not miscounted as a gap of mine. Each line of oth.txt is
 # "<owner>\t<point>"; any of their job states (idle/run/held) counts as "in progress", and
 # the owner drives the 'runner' column.
 : > "$TMP/oth.txt"
+: > "$TMP/noth.txt"
 if [ -n "$OTHERS" ] && [ "$QUEUE" = 1 ]; then
   owner_expr=$(printf '%s' "$OTHERS" | tr ',' '\n' | sed '/^$/d;s/.*/Owner=="&"/' | paste -sd '|' | sed 's/|/ || /g')
   if [ -n "$owner_expr" ]; then
-    echo ">> reading colleagues' gridpack jobs (pool-wide): $OTHERS"
+    echo ">> reading colleagues' gridpack + nanogen jobs (pool-wide): $OTHERS"
     condor_q -global -allusers \
       -constraint "regexp(\"run_smeft_gridpack.sh\", Cmd) && ($owner_expr)" \
       -af Owner Args 2>/dev/null | awk 'NF>=2{a=$2; sub(/\.input$/,"",a); print $1"\t"a}' \
       > "$TMP/oth.txt" || true
+    # same for nanogen; key is "<point>\t<gjob>" so it lines up with the output file
+    condor_q -global -allusers \
+      -constraint "regexp(\"run_nanogen.sh\", Cmd) && ($owner_expr)" \
+      -af Owner Args 2>/dev/null | awk 'NF>=3{print $1"\t"$2"\t"$3}' \
+      > "$TMP/noth.txt" || true
   fi
 fi
-export OTH_F="$TMP/oth.txt" OTHERS
+export OTH_F="$TMP/oth.txt" NOTH_F="$TMP/noth.txt" OTHERS
 
-if [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ]; then EMIT_GAPS=1; else EMIT_GAPS=0; fi
-export EMIT_GAPS GAPS_OUT="$TMP/gaps.txt" FLAVOUR DRYRUN
+if [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || [ "$RESUBMIT_NANO" = 1 ]; then EMIT_GAPS=1; else EMIT_GAPS=0; fi
+export EMIT_GAPS GAPS_OUT="$TMP/gaps.txt" NGAPS_OUT="$TMP/ngaps.txt" FLAVOUR DRYRUN
 
 # Cards and logs, to say WHY a gap is a gap: no card => never even carded (not
 # submitted); card but no log => carded/submitted but the job left no trace.
@@ -166,6 +186,16 @@ if oth_f and os.path.exists(oth_f):
             owner_of.setdefault(parts[1], parts[0])
 others = set(owner_of)
 
+# Same for NANOGEN, but keyed per (point, gjob) -- one job per output file.
+noth_f = os.environ.get("NOTH_F", "")
+nowner_of = {}
+if noth_f and os.path.exists(noth_f):
+    for l in open(noth_f):
+        parts = l.rstrip("\n").split("\t")
+        if len(parts) == 3 and parts[1] and parts[2]:
+            nowner_of.setdefault((parts[1], parts[2]), parts[0])
+nothers = set(nowner_of)
+
 # point name -> {1:idle, 2:running, 5:held}; a point may hold >1 job (a resubmit)
 queue = {}
 for line in open(q_f):
@@ -176,16 +206,39 @@ for line in open(q_f):
     try: queue.setdefault(arg, set()).add(int(st))
     except ValueError: pass
 
+# (point, gjob) -> {1,2,5} for my NANOGEN jobs. Args = "<point> <gjob>", and the job
+# delivers NANOGEN_<point>_<gjob>.root, so this keys 1:1 to the file we look for.
+nqueue = {}
+nq_f = os.environ.get("NQ_F", "")
+if nq_f and os.path.exists(nq_f):
+    for line in open(nq_f):
+        f = line.split()
+        if len(f) < 3: continue
+        try: nqueue.setdefault((f[1].strip('"'), f[2].strip('"')), set()).add(int(f[0]))
+        except ValueError: pass
+
 # Batch ranges, in order of preference:
 #   --batches <file>  "start stop" per line (# comments and blanks ignored)
 #   --chunk <n>       uniform blocks of n
 #   default           the 5D production layout below; for any other grid size,
 #                     fall back to uniform chunks so the table still covers it.
-BATCHES_5D = [(1701,1800),(1801,1900),(1901,2000),(2001,2050),(2051,2150),
+BATCHES_5D_SUBMITTED = [(1701,1800),(1801,1900),(1901,2000),(2001,2050),(2051,2150),
               (2151,2250),(2251,2300),(2301,2400),(2401,2450),(2451,2500),
               (1,100),(101,200),(201,300),(301,400),(401,500),(501,600),
               (601,700),(701,800),(801,900),(901,1000),(1001,1100),(1101,1200),
               (1201,1300),(1301,1400),(1401,1500),(1501,1600),(1601,1696)]
+
+def split(ranges, size):
+    """Cut each range into blocks of at most `size`, keeping the original order.
+    The last block of a range may be short (e.g. 1601-1696 -> 1601-1650, 1651-1696)."""
+    out = []
+    for a, b in ranges:
+        out += [(s, min(s+size-1, b)) for s in range(a, b+1, size)]
+    return out
+
+# Reported in blocks of 50: same submission order, finer granularity, so a half-done
+# 100-point batch shows which half is missing.
+BATCHES_5D = split(BATCHES_5D_SUBMITTED, 50)
 
 # 9D extension (2000 points): each 2D plane is its OWN batch (points 1..832 -- the four
 # four-top operators crossed with the leading operators, CtG, and each other), then the
@@ -237,6 +290,8 @@ print(f"gridpacks: {gpdir}")
 print(f"nanogen  : {nanodir}   ({njobs} jobs/point)")
 print(f"queue    : {len(queue)} points with a gridpack job in MY queue"
       if queue else "queue    : (not read -- --no-queue, or no schedd/proxy)")
+if nqueue:
+    print(f"           {len(nqueue)} nanogen job(s) in MY queue")
 print()
 cards = {l.strip() for l in open(os.environ["CARDS_F"]) if l.strip()}
 logs  = {l.strip() for l in open(os.environ["LOGS_F"])  if l.strip()}
@@ -250,13 +305,16 @@ def yesno(have, total):
 
 # The 'oth' count + 'runner' name columns (points a colleague is building) only appear
 # with --others, so the default table is byte-identical to before.
-OTHCOL = bool(others)
-RUNW = 18                                   # width of the trailing 'runner' column
+OTHCOL = bool(others or nothers)
+RUNW = 18                                   # width of each 'runner' column
 oth_h = f"{'oth':>4} " if OTHCOL else ""
 run_h = f" | {'runner':<{RUNW}}" if OTHCOL else ""
+# Two job blocks: gridpacks (1 job/point) and nanogen (njobs jobs/point, so its
+# run/idle/held/oth/gap count FILES still missing, matching the 'nanogen files' column).
 hdr = (f"{'start':>6} {'stop':>6} {'pts':>5} | {'gridpacks':>13} | "
-       f"{'run':>4} {'idle':>4} {'held':>4} {oth_h}{'gap':>4} {'card':>5} {'log':>5} | "
-       f"{'nanogen files':>15} | {'full':>11}{run_h}")
+       f"{'run':>4} {'idle':>4} {'held':>4} {oth_h}{'gap':>4} {'card':>5} {'log':>5}{run_h} | "
+       f"{'nanogen files':>15} | {'full':>11} | "
+       f"{'run':>4} {'idle':>4} {'held':>4} {oth_h}{'gap':>4}{run_h}")
 print(hdr); print("-"*len(hdr))
 
 def runner_cell(owners):
@@ -270,12 +328,15 @@ def cell(done, total, width):
     return f"{done}/{total}".rjust(width) + (" *" if done == total else "  ")
 
 tp=tg=tn=tf=tr=ti=th=tx=to=0; tgc=tgl=0
-all_owners = set()
+tnr=tni=tnh=tno=tnx=0
+all_owners = set(); all_nowners = set()
 for lo,hi in BATCHES:
     n = hi-lo+1
     g = f = nf = r = idle = held = gap = oth = 0
+    nr = nidle = nheld = ngap = noth = 0
     gap_card = gap_log = 0
     owners = set()                           # colleagues building points IN THIS batch
+    nowners = set()                          # ... and running its nanogen jobs
     for i in range(lo,hi+1):
         name = point_name(pts[i-1])
         have = name+"_gridpack.tar.gz" in gp
@@ -294,30 +355,51 @@ for lo,hi in BATCHES:
                 gap += 1                     # no file, no job: never submitted/lost
                 if name in cards: gap_card += 1
                 if name in logs:  gap_log  += 1
-        c = sum(1 for j in range(1,njobs+1) if f"NANOGEN_{name}_{j}.root" in nano)
+        c = 0
+        for j in range(1, njobs+1):
+            if f"NANOGEN_{name}_{j}.root" in nano:
+                c += 1
+                continue
+            # file not there yet: explain it the same way as for gridpacks
+            nst = nqueue.get((name, str(j)), set())
+            if   2 in nst: nr    += 1
+            elif 1 in nst: nidle += 1
+            elif 5 in nst: nheld += 1
+            elif (name, str(j)) in nothers:
+                noth += 1
+                nowners.add(nowner_of[(name, str(j))])
+            else:          ngap  += 1
         nf += c
         if c == njobs: f += 1
     tp+=n; tg+=g; tn+=nf; tf+=f; tr+=r; ti+=idle; th+=held; tx+=gap; to+=oth
-    tgc+=gap_card; tgl+=gap_log; all_owners |= owners
-    oth_c = f"{oth:>4} " if OTHCOL else ""
+    tnr+=nr; tni+=nidle; tnh+=nheld; tno+=noth; tnx+=ngap
+    tgc+=gap_card; tgl+=gap_log; all_owners |= owners; all_nowners |= nowners
+    oth_c  = f"{oth:>4} "  if OTHCOL else ""
+    noth_c = f"{noth:>4} " if OTHCOL else ""
     print(f"{lo:>6} {hi:>6} {n:>5} | {cell(g,n,11)} | "
           f"{r:>4} {idle:>4} {held:>4} {oth_c}{gap:>4} "
-          f"{yesno(gap_card,gap):>5} {yesno(gap_log,gap):>5} | "
-          f"{cell(nf,n*njobs,13)} | {cell(f,n,9)}{runner_cell(owners)}")
+          f"{yesno(gap_card,gap):>5} {yesno(gap_log,gap):>5}{runner_cell(owners)} | "
+          f"{cell(nf,n*njobs,13)} | {cell(f,n,9)} | "
+          f"{nr:>4} {nidle:>4} {nheld:>4} {noth_c}{ngap:>4}{runner_cell(nowners)}")
 
 print("-"*len(hdr))
-oth_t = f"{to:>4} " if OTHCOL else ""
+oth_t  = f"{to:>4} "  if OTHCOL else ""
+noth_t = f"{tno:>4} " if OTHCOL else ""
 print(f"{'TOTAL':>13} {tp:>5} | {cell(tg,tp,11)} | "
       f"{tr:>4} {ti:>4} {th:>4} {oth_t}{tx:>4} "
-      f"{yesno(tgc,tx):>5} {yesno(tgl,tx):>5} | "
-      f"{cell(tn,tp*njobs,13)} | {cell(tf,tp,9)}{runner_cell(all_owners)}")
-print("\n* = complete.  run/idle/held/gap count points with NO gridpack yet:")
+      f"{yesno(tgc,tx):>5} {yesno(tgl,tx):>5}{runner_cell(all_owners)} | "
+      f"{cell(tn,tp*njobs,13)} | {cell(tf,tp,9)} | "
+      f"{tnr:>4} {tni:>4} {tnh:>4} {noth_t}{tnx:>4}{runner_cell(all_nowners)}")
+print("\n* = complete.  The FIRST run/idle/held/gap block counts points with NO gridpack yet;")
+print("  the block after 'full' counts nanogen FILES still missing (njobs per point).")
 if OTHCOL:
-    print(f"  oth = a colleague ({os.environ.get('OTHERS','')}) has a gridpack job for it "
-          "(pool-wide) -- excluded from gap and from --resubmit-gaps.")
+    print(f"  oth = a colleague ({os.environ.get('OTHERS','')}) has a job for it "
+          "(pool-wide) -- excluded from gap, and from --resubmit-gaps on the gridpack side.")
     print("  gap = no file and NO job of mine OR of the --others owners.")
 else:
     print("  gap = no file and no job of mine -- never submitted, lost, or someone else's.")
+print("  NB nanogen's submit file sets periodic_remove on JobStatus==5, so its 'held'")
+print("     is normally 0: a held nanogen job is removed and shows up as a gap instead.")
 print("  held jobs need condor_rm + resubmit; check: condor_q -constraint 'JobStatus==5' -af HoldReason")
 print("  card/log = do the GAP points have a card / a condor .out?  yes | no | n/total")
 print("    no card          -> never submitted (cards are written at submit time)")
@@ -347,19 +429,112 @@ if os.environ.get("EMIT_GAPS") == "1":
     with open(os.environ["GAPS_OUT"], "w") as fh:
         for a, b in runs:
             fh.write(f"{gsel}--start {a} --end {b} --only-missing{extra}\n")
-    print(f"\ngaps: {len(gaps)} point(s) in {len(runs)} contiguous run(s)")
+    print(f"\ngridpack gaps: {len(gaps)} point(s) in {len(runs)} contiguous run(s)")
     if gaps:
         print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in runs))
+
+    # NANOGEN resubmit: a point needs --only-missing if its gridpack IS ready (nanogen
+    # can't run without it) but at least one of its njobs output files is absent and NOT
+    # covered by a LIVE job -- i.e. no idle/running job of mine and no --others job. A
+    # HELD job counts as needing resubmit: the submit file's periodic_remove kills it,
+    # so it will never deliver. submit_nanogen.sh --only-missing then re-queues exactly
+    # the missing (point,gjob) files, skipping any that landed in the meantime, so it is
+    # safe to emit at the whole-range level. NB clear held jobs first (condor_rm) or the
+    # resubmit runs alongside them until periodic_remove fires.
+    ngaps = []
+    for lo, hi in BATCHES:
+        for i in range(lo, hi+1):
+            name = point_name(pts[i-1])
+            if name+"_gridpack.tar.gz" not in gp:      # no gridpack: nanogen can't run yet
+                continue
+            needs = False
+            for j in range(1, njobs+1):
+                if f"NANOGEN_{name}_{j}.root" in nano:  # already delivered
+                    continue
+                nst = nqueue.get((name, str(j)), set())
+                if 2 in nst or 1 in nst:                # my live (running/idle) job: leave it
+                    continue
+                if (name, str(j)) in nothers:           # a colleague is running it
+                    continue
+                needs = True                            # held or truly absent -> resubmit
+                break
+            if needs:
+                ngaps.append(i)
+    ngaps = sorted(set(ngaps))
+    nruns = []
+    for i in ngaps:
+        if nruns and i == nruns[-1][1] + 1: nruns[-1][1] = i
+        else: nruns.append([i, i])
+    nflav = os.environ.get("FLAVOUR", "")
+    nextra = f" --flavour {nflav}" if nflav else ""
+    with open(os.environ["NGAPS_OUT"], "w") as fh:
+        for a, b in nruns:
+            fh.write(f"{gsel}--start {a} --end {b} --only-missing{nextra}\n")
+    print(f"nanogen gaps: {len(ngaps)} point(s) with missing files in {len(nruns)} run(s)")
+    if ngaps:
+        print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in nruns))
 EOF
 
 # ---------------------------------------------------------------------------
 # --gaps / --resubmit-gaps
 # ---------------------------------------------------------------------------
-[ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || exit 0
-[ -s "$TMP/gaps.txt" ] || { echo; echo ">> no gaps to resubmit."; exit 0; }
+[ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || [ "$RESUBMIT_NANO" = 1 ] || exit 0
+
+# ---------------------------------------------------------------------------
+# NANOGEN --only-missing resubmit (printed always; auto-run only with --resubmit-nano)
+# ---------------------------------------------------------------------------
+# submit_nanogen.sh now gives EACH run its OWN per-run fragment dir, so a later range's
+# fragment regen can never delete an earlier range's still-needed inputs. That removes the
+# old "held on: input file No such file or directory" race, so ranges can be fired
+# back-to-back with NO drain wait between them.
+NANO_SUBMITTER=$HERE/submit_nanogen.sh
+if [ -s "$TMP/ngaps.txt" ]; then
+  echo
+  echo ">> NANOGEN --only-missing commands (run from $HERE):"
+  while read -r a; do echo "   ./$(basename "$NANO_SUBMITTER") $a"; done < "$TMP/ngaps.txt"
+fi
+
+if [ "$RESUBMIT_NANO" = 1 ]; then
+  if [ ! -s "$TMP/ngaps.txt" ]; then
+    echo; echo ">> --resubmit-nano: no nanogen gaps to resubmit."
+  else
+    NR=$(wc -l < "$TMP/ngaps.txt")
+    if [ "$DRYRUN" = 1 ]; then
+      echo; echo ">> DRY RUN: would submit $NR nanogen range(s) back-to-back."
+      echo "   Nothing submitted; each real run makes its own fragment dir (no wait needed)."
+    else
+      [ -x "$NANO_SUBMITTER" ] || { echo "!! not executable: $NANO_SUBMITTER" >&2; exit 1; }
+      if [ "$ASSUME_YES" != 1 ]; then
+        echo
+        echo "!! --resubmit-nano will submit $NR nanogen range(s) back-to-back (each in its own"
+        echo "!! fragment dir, so no drain wait is needed). --only-missing skips delivered files."
+        printf ">> proceed? [y/N] "
+        read -r ans </dev/tty 2>/dev/null || ans=n
+        case $ans in [yY]*) ;; *) echo ">> aborted, nothing submitted."; exit 0;; esac
+      fi
+      cd "$HERE"
+      i=0; nsub=0; rc=0
+      while read -r a; do
+        i=$((i + 1))
+        echo; echo ">> [$i/$NR] $(basename "$NANO_SUBMITTER") $a"
+        # shellcheck disable=SC2086
+        out=$("$NANO_SUBMITTER" $a 2>&1) || rc=1; echo "$out"
+        cl=$(printf '%s\n' "$out" | grep -oE 'submitted to cluster [0-9]+' | grep -oE '[0-9]+' | tail -1)
+        if [ -n "$cl" ]; then nsub=$((nsub + 1)); else
+          echo "   (no cluster submitted for this range -- nothing missing, or a skip.)"
+        fi
+      done < "$TMP/ngaps.txt"
+      echo; echo ">> --resubmit-nano finished: $nsub cluster(s) submitted over $i range(s)."
+      exit $rc
+    fi
+  fi
+fi
+
+[ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || exit 0    # --resubmit-nano only: done above
+[ -s "$TMP/gaps.txt" ] || { echo; echo ">> no gridpack gaps to resubmit."; exit 0; }
 
 echo
-echo ">> resubmit commands (run from $(cd "$(dirname "$SUBMITTER")" && pwd)):"
+echo ">> gridpack resubmit commands (run from $(cd "$(dirname "$SUBMITTER")" && pwd)):"
 while read -r a; do echo "   ./$(basename "$SUBMITTER") $a"; done < "$TMP/gaps.txt"
 
 if [ "$DRYRUN" = 1 ]; then
