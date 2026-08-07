@@ -206,6 +206,39 @@ though that sample is leading-only — CtG ≠ 0 subleading has never been measu
 | `--report` | off | print done/missing status, do not submit |
 | `--dry-run` | off | build cards + `cards.list`, print submit args, do not submit |
 | `--test` | off | coarse smoke build of the FIRST selected point (degraded stats) |
+| `--ecm N` | 13.6 | centre-of-mass energy in TeV: `13` \| `13.6` \| `100` (FCC-hh); see below |
+| `--pdf LHAID` | (from `--ecm`) | LHAPDF `lhans1/lhans2` override; default keeps the template's `90400`, except `--ecm 100` auto-selects `93300` |
+
+## Centre-of-mass energy (`--ecm`) and PDF
+
+`--ecm {13|13.6|100}` (TeV) sets the POWHEG per-beam energies
+`ebeam1 = ebeam2 = ecm*1000/2` **and** routes output to an energy-tagged EOS dir and
+card dir so different energies never overwrite each other (the coefficient grid — and
+therefore the card/gridpack names — is energy-agnostic).
+
+| `--ecm` | ebeam1/2 (GeV) | PDF `lhans1/lhans2` (LHAID) | EOS `--outdir` / `--carddir` tag |
+|---|---|---|---|
+| `13`   | 6500  | 90400 = PDF4LHC15_nlo_30_pdfas | `…_13TeV` / `cards_prod_13TeV` |
+| `13.6` (default, current production) | 6800 | 90400 = PDF4LHC15_nlo_30_pdfas | *(untagged — the live dirs)* |
+| `100` (FCC-hh) | 50000 | **93300 = PDF4LHC21_40_pdfas** (auto) | `…_100TeV` / `cards_prod_100TeV` |
+
+- **13.6 TeV keeps the original untagged dirs** so existing Run-3 production is untouched;
+  13 / 100 TeV write to sibling `…_13TeV` / `…_100TeV` dirs (created empty under
+  `/eos/user/a/acarvalh/`). The energy-independent process tarball is shared across all.
+- **The PDF is baked into the gridpack at build time** via the card's `lhans1/lhans2`, so
+  nanogen needs no PDF argument — it inherits whatever the gridpack was built with.
+  `makeSMEFTCards.py` writes `lhans` as a **bare integer** (POWHEG requires it).
+- **FCC-hh (100 TeV) auto-selects PDF4LHC21_40_pdfas (93300)** because its grid
+  (XMin ≈ 1e-6, QMax 1e6 GeV) covers the small-x / high-Q region gg→HH probes at 100 TeV,
+  where PDF4LHC15 (XMin ≈ 6e-6, QMax 1e5) would hit its grid edge. Override for any energy
+  with `--pdf <LHAID>`. For final cross-sections still quote the full PDF uncertainty
+  (large at small-x) and consider a small-x-resummed set (e.g. NNPDF3.1sx).
+
+```bash
+./submit_smeft.sh --start 1 --end 200 --ecm 100      # FCC-hh: ebeam 50000, PDF 93300, …_100TeV dir
+./submit_smeft.sh --start 1 --end 200 --ecm 13        # Run 2: ebeam 6500, …_13TeV dir
+./submit_smeft.sh --start 1 --end 200                 # default 13.6 TeV, untagged production dir
+```
 
 ## Files
 

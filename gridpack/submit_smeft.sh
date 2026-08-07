@@ -23,7 +23,16 @@ GEN_DIR=${GEN_DIR:-$HERE}
 NCARDS=3                                   # how many JSON points (0 = all); ignored if START/END set
 START=0                                     # first point, 1-based inclusive (0 = beginning)
 END=0                                       # last point, 1-based inclusive (0 = end)
-CARDDIR=$GEN_DIR/cards_prod                # where generated cards go
+# Centre-of-mass energy (TeV): 13 = Run 2, 13.6 = Run 3 (default, current production),
+# 100 = FCC-hh. Sets the POWHEG beams (ebeam=ecm*1000/2) in makeSMEFTCards.py AND routes
+# cards + gridpacks to an energy-tagged dir so 13/100 TeV never collide with the in-flight
+# 13.6 TeV output (which keeps the original untagged paths). See ECM_TAG resolution below.
+ECM=13.6                                    # 13 | 13.6 | 100
+# PDF (LHAPDF LHAID) baked into the cards' lhans1/lhans2. Empty => keep the template's
+# 90400 (PDF4LHC15_nlo_30_pdfas) for 13/13.6 TeV. At 100 TeV it DEFAULTS to the FCC-hh
+# recommendation 93300 (PDF4LHC21_40_pdfas) — see the --ecm resolution below. --pdf overrides.
+PDF=""                                      # LHAID; empty => per-ECM default
+CARDDIR=""                                  # empty => $GEN_DIR/cards_prod<ECM_TAG>; --carddir overrides
 # Grid selection: --grid picks the BUNDLED points JSON that drives card generation AND
 # the matching EOS gridpack output dir. They are paired: card/gridpack names are built
 # from the JSON, so JSON and output dir must stay together. 4d = leading only; 5d =
@@ -81,6 +90,8 @@ while [ $# -gt 0 ]; do
     --start)   START=$2; shift 2;;
     --end)     END=$2; shift 2;;
     --carddir) CARDDIR=$2; shift 2;;
+    --ecm)     ECM=$2; shift 2;;
+    --pdf)     PDF=$2; shift 2;;
     --grid)    GRID=$2; shift 2;;
     --points)  POINTS=$2; shift 2;;
     --outdir)  OUTPUT_DIR=$2; shift 2;;
@@ -100,6 +111,22 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# Resolve --ecm into the per-beam energy + an output tag. 13.6 TeV (current production)
+# keeps the ORIGINAL untagged EOS/card dirs so it is untouched; 13 and 100 TeV get a
+# sibling "_13TeV"/"_100TeV" dir. ebeam is passed through to makeSMEFTCards.py via --ecm.
+case "$ECM" in
+  13|13.0)   ECM_TAG=_13TeV;;
+  13.6)      ECM_TAG=;;
+  100|100.0) ECM_TAG=_100TeV; [ -n "$PDF" ] || PDF=93300;;   # FCC-hh: PDF4LHC21_40_pdfas
+  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+esac
+OUTDIR_4D=$OUTDIR_4D$ECM_TAG
+OUTDIR_5D=$OUTDIR_5D$ECM_TAG
+OUTDIR_9D=$OUTDIR_9D$ECM_TAG
+# Cards for a given point are named by Wilson coefficients only (energy-agnostic), so
+# different energies must NOT share cards_prod or they overwrite each other.
+[ -n "$CARDDIR" ] || CARDDIR=$GEN_DIR/cards_prod$ECM_TAG
+
 # Resolve --grid into the points JSON + gridpack output dir. --points / --outdir win.
 case "$GRID" in
   4d) [ -n "$POINTS" ] || POINTS=$JSON_4D; [ -n "$OUTPUT_DIR" ] || OUTPUT_DIR=$OUTDIR_4D;;
@@ -108,7 +135,7 @@ case "$GRID" in
   *)  echo "--grid must be 4d, 5d or 9d (got '$GRID')" >&2; exit 1;;
 esac
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
-echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$OUTPUT_DIR"
+echo ">> grid=$GRID  ecm=${ECM}TeV  pdf=${PDF:-90400(template)}  points=$(basename "$POINTS")  cards=$CARDDIR  gridpacks=$OUTPUT_DIR"
 
 # --test: prove the WHOLE pipeline (warmup -> stages 1-4 -> gridpack assembly ->
 # EOS delivery) on the FIRST selected point in minutes, with coarse integration
@@ -153,10 +180,10 @@ mkdir -p logs "$CARDDIR"
 mkdir -p "$CARDDIR"
 if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
   echo ">> generating cards (points $START..$END, 1-based inclusive) into $CARDDIR"
-  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --start "$START" --end "$END"
+  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --ecm "$ECM" ${PDF:+--pdf "$PDF"} --start "$START" --end "$END"
 else
   echo ">> generating cards (nmax=$NCARDS) into $CARDDIR"
-  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --nmax "$NCARDS"
+  python3 "$GEN_DIR/makeSMEFTCards.py" --points "$POINTS" --outdir "$CARDDIR" --ecm "$ECM" ${PDF:+--pdf "$PDF"} --nmax "$NCARDS"
 fi
 
 # This run's card tags, from the manifest just written (the selected points only).

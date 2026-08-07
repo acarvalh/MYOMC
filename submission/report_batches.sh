@@ -1,7 +1,7 @@
 #!/bin/bash
 # Print a per-batch table of how many gridpacks and nanogen files are ready on EOS.
-#   ./report_batches.sh [--grid 4d|5d|9d] [--points <json>] [--gpdir <url>]
-#                       [--nanodir <url>] [--njobs <n>]
+#   ./report_batches.sh [--grid 4d|5d|9d] [--ecm 13|13.6|100] [--points <json>]
+#                       [--gpdir <url>] [--nanodir <url>] [--njobs <n>] [--backend condor|crab]
 #                       [--batches <file>] [--chunk <n>] [--no-queue]
 #                       [--others u1,u2] [--gaps]
 #                       [--resubmit-gaps [--yes|--dry-run]] [--week|--flavour X]
@@ -9,12 +9,19 @@
 # --gaps PRINTS nanogen `submit_nanogen.sh ... --only-missing` commands for points with
 # missing NANOGEN files. --resubmit-nano RUNS them back-to-back; no drain wait is needed
 # because submit_nanogen.sh gives each run its own fragment dir (no shared-wipe race).
+# Under --backend crab both instead PRINT per-point `crab resubmit -d <proj>` for tasks
+# that exist (never auto-run), and flag ranges with no CRAB task yet as needing an initial
+# submit -- CRAB seeds by job number, so a top-up submit would duplicate events.
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # --grid selects the JSON *and* its matching gridpack dir, exactly as submit_nanogen.sh
 # does; the pair must stay together or the index -> point mapping silently shifts.
 GRID=5d
+# --ecm {13|13.6|100} TeV: report the matching energy-tagged EOS dirs. 13.6 (default,
+# current production) uses the ORIGINAL untagged dirs; 13/100 TeV read the sibling
+# "_13TeV"/"_100TeV" dirs. Threaded into the resubmit commands this prints too.
+ECM=13.6
 JSON_4D=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json
 JSON_5D=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json
 JSON_9D=$HERE/FINALgrid_for_SMEFT_9D_extension_only.json
@@ -30,6 +37,11 @@ NANODIR=""                                     # empty => derive from --grid; --
 POINTS=""                                      # explicit JSON; overrides --grid
 GPDIR=""                                       # explicit dir;  overrides --grid
 NJOBS=5                                        # nanogen jobs/point; must match submit_nanogen.sh
+BACKEND=condor                                 # condor | crab. crab: nanogen 'done' is counted by
+                                               # walking the CRAB LFN tree (NANODIR/<req>/<tag>/<ts>/000X/*.root)
+                                               # instead of the flat NANOGEN_<point>_<gjob>.root layout; the
+                                               # condor-only queue columns (run/idle/held) then read 0 (CRAB
+                                               # jobs aren't in local condor_q -- use `crab status` for in-flight).
 QUEUE=1                                        # read condor_q (--no-queue to skip)
 OTHERS=""                                       # --others u1,u2: also count these owners' gridpack jobs
                                                # (pool-wide condor_q -global -allusers). A point they are
@@ -54,10 +66,12 @@ usage() { sed -n "2,11p" "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
 while [ $# -gt 0 ]; do
   case $1 in
     --grid)    GRID=$2;    shift 2;;
+    --ecm)     ECM=$2;     shift 2;;
     --gpdir)   GPDIR=$2;   shift 2;;
     --nanodir) NANODIR=$2; shift 2;;
     --points)  POINTS=$2;  shift 2;;
     --njobs)   NJOBS=$2;   shift 2;;
+    --backend) BACKEND=$2; shift 2;;
     --batches) BATCHFILE=$2; shift 2;;
     --chunk)   CHUNK=$2;     shift 2;;
     --no-queue) QUEUE=0;     shift 1;;
@@ -77,6 +91,30 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# Resolve --ecm into the EOS dir tag (empty for the untagged 13.6 TeV production).
+case "$ECM" in
+  13|13.0)   ECM_TAG=_13TeV;;
+  13.6)      ECM_TAG=;;
+  100|100.0) ECM_TAG=_100TeV;;
+  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+esac
+GPDIR_4D=$GPDIR_4D$ECM_TAG; GPDIR_5D=$GPDIR_5D$ECM_TAG; GPDIR_9D=$GPDIR_9D$ECM_TAG
+NANODIR_4D=$NANODIR_4D$ECM_TAG; NANODIR_5D=$NANODIR_5D$ECM_TAG; NANODIR_9D=$NANODIR_9D$ECM_TAG
+
+case "$BACKEND" in
+  condor|crab) ;;
+  *) echo "--backend must be condor or crab (got '$BACKEND')" >&2; exit 1;;
+esac
+# CRAB top-ups reuse job-number-based seeds -> duplicate events (see submit_crab.sh), so
+# report_batches must never run submit_nanogen for CRAB gaps. Instead, under --backend crab,
+# a nanogen gap is fixed EITHER by `crab resubmit` on the point's existing task (safe: it
+# re-runs only that task's FAILED jobs, no seed reuse) OR, if no task exists yet, by an
+# INITIAL submit. So --gaps / --resubmit-nano under crab PRINT the right per-point command:
+# `crab resubmit -d <workArea>/crab_<req>` when the CRAB project dir exists, else flag the
+# range as "not yet submitted". CRAB workArea (submit_crab.sh sets General.workArea, run
+# from this dir) => project dirs live in $HERE/crab_nanogen/crab_<req>. Override with env.
+CRAB_WORKAREA=${CRAB_WORKAREA:-$HERE/crab_nanogen}
+
 case $GRID in
   4d) GRID_JSON=$JSON_4D; GRID_GPDIR=$GPDIR_4D; GRID_NANO=$NANODIR_4D;;
   5d) GRID_JSON=$JSON_5D; GRID_GPDIR=$GPDIR_5D; GRID_NANO=$NANODIR_5D;;
@@ -86,8 +124,9 @@ esac
 POINTS=${POINTS:-$GRID_JSON}
 GPDIR=${GPDIR:-$GRID_GPDIR}
 NANODIR=${NANODIR:-$GRID_NANO}
-export GRID
+export GRID ECM ECM_TAG
 [ -f "$POINTS" ] || { echo "points JSON not found: $POINTS" >&2; exit 1; }
+echo ">> grid=$GRID  ecm=${ECM}TeV  gridpacks=$GPDIR  nanogen=$NANODIR" >&2
 
 export X509_USER_PROXY=${X509_USER_PROXY:-$HOME/private/x509up}
 
@@ -101,9 +140,30 @@ list_dir() {
   esac | xargs -n1 basename 2>/dev/null | grep -v '^\.sys' || true
 }
 
+# For --backend crab: emit ONE line per delivered .root file = the CRAB primaryDataset
+# dir (<req>) it sits under, so the Python side can count files per point. CRAB writes
+# NANODIR/<req>/<outputDatasetTag>/<timestamp>/000X/<file>_<jobid>.root, and <req> =
+# "<point without powheg_ prefix>"[:100] (see submit_crab.sh). Walk recursively, keep
+# only .root files, strip the NANODIR base, take the first path component (<req>).
+list_nano_crab() {
+  local url=$1 base paths
+  case $url in
+    root://*) base="/eos/${url#*//eos/}"
+              paths=$(xrdfs "${url%%//eos/*}" ls -R "$base" 2>/dev/null) ;;
+    *)        base=$url
+              paths=$(find "$url" -type f 2>/dev/null) ;;
+  esac
+  printf '%s\n' "$paths" | grep -E '\.root$' | grep -v '\.sys' \
+    | sed "s#^${base%/}/##" | awk -F/ 'NF>=1{print $1}' || true
+}
+
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 list_dir "$GPDIR"        > "$TMP/gp.txt"
-list_dir "$NANODIR" -R   > "$TMP/nano.txt"   # -R: files sit in <point>/ subfolders
+if [ "$BACKEND" = crab ]; then
+  list_nano_crab "$NANODIR" > "$TMP/nano.txt"   # one <req> per delivered .root file
+else
+  list_dir "$NANODIR" -R   > "$TMP/nano.txt"   # -R: files sit in <point>/ subfolders
+fi
 
 # Live queue state, so a missing gridpack can be told apart from a queued one.
 # Args carries the point name ("<point>.input"); JobStatus 1=idle 2=run 5=held.
@@ -115,11 +175,13 @@ if [ "$QUEUE" = 1 ]; then
   condor_q -constraint 'regexp("run_smeft_gridpack.sh", Cmd)' \
            -af JobStatus Args > "$TMP/q.txt" 2>/dev/null || true
   # NANOGEN jobs: Args is "<point> <gjob>", and the job writes NANOGEN_<point>_<gjob>.root,
-  # so (point,gjob) keys the queue exactly like the file it will deliver.
-  condor_q -constraint 'regexp("run_nanogen.sh", Cmd)' \
+  # so (point,gjob) keys the queue exactly like the file it will deliver. CRAB jobs are NOT
+  # in the local condor_q, so skip this for --backend crab (nq.txt stays empty => run/idle/
+  # held read 0; CRAB in-flight status comes from `crab status`, not this script).
+  [ "$BACKEND" = crab ] || condor_q -constraint 'regexp("run_nanogen.sh", Cmd)' \
            -af JobStatus Args > "$TMP/nq.txt" 2>/dev/null || true
 fi
-export NQ_F="$TMP/nq.txt"
+export NQ_F="$TMP/nq.txt" BACKEND
 
 # --others u1,u2: also read those owners' gridpack jobs, pool-wide (-global -allusers),
 # so a point THEY are building is not miscounted as a gap of mine. Each line of oth.txt is
@@ -146,6 +208,7 @@ export OTH_F="$TMP/oth.txt" NOTH_F="$TMP/noth.txt" OTHERS
 
 if [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || [ "$RESUBMIT_NANO" = 1 ]; then EMIT_GAPS=1; else EMIT_GAPS=0; fi
 export EMIT_GAPS GAPS_OUT="$TMP/gaps.txt" NGAPS_OUT="$TMP/ngaps.txt" FLAVOUR DRYRUN
+export CRAB_WORKAREA CRAB_RESUB_OUT="$TMP/crab_resub.txt" CRAB_MISSING_OUT="$TMP/crab_missing.txt"
 
 # Cards and logs, to say WHY a gap is a gap: no card => never even carded (not
 # submitted); card but no log => carded/submitted but the job left no trace.
@@ -172,6 +235,22 @@ pts   = json.load(open(points_f))
 gp    = {l.strip() for l in open(gp_f)   if l.strip()}
 nano  = {l.strip() for l in open(nano_f) if l.strip()}
 N     = len(pts)
+
+# Backend-dependent "is nanogen file j of this point delivered?" test.
+#   condor: nano_f holds basenames -> membership of NANOGEN_<point>_<j>.root.
+#   crab:   nano_f holds one CRAB primaryDataset <req> per delivered .root file, so we
+#           COUNT files per <req> and treat the first `count` job-slots (1..count) as done.
+#           <req> = "<point without powheg_ prefix>"[:100] (matches submit_crab.sh).
+from collections import Counter
+backend = os.environ.get("BACKEND", "condor")
+crab_count = Counter(l.strip() for l in open(nano_f) if l.strip()) if backend == "crab" else Counter()
+def req_of(name):
+    r = name[len("powheg_"):] if name.startswith("powheg_") else name
+    return r[:100]
+def delivered(name, j):
+    if backend == "crab":
+        return j <= crab_count.get(req_of(name), 0)
+    return f"NANOGEN_{name}_{j}.root" in nano
 
 # Points other submitters (--others) are building, pool-wide. A point here is treated
 # as "in progress elsewhere": counted in the 'oth' column, named in the 'runner' column,
@@ -357,7 +436,7 @@ for lo,hi in BATCHES:
                 if name in logs:  gap_log  += 1
         c = 0
         for j in range(1, njobs+1):
-            if f"NANOGEN_{name}_{j}.root" in nano:
+            if delivered(name, j):
                 c += 1
                 continue
             # file not there yet: explain it the same way as for gridpacks
@@ -424,8 +503,10 @@ if os.environ.get("EMIT_GAPS") == "1":
     flav = os.environ.get("FLAVOUR", "")
     extra = f" --flavour {flav}" if flav else ""
     # Carry the grid through so the submitter builds the right cards AND writes to the
-    # matching gridpack dir (submit_smeft.sh defaults to 5d otherwise).
-    gsel = f"--grid {grid} "
+    # matching gridpack dir (submit_smeft.sh defaults to 5d otherwise). Carry --ecm too
+    # for non-default energies so the resubmit targets the same energy-tagged dirs.
+    ecm_arg = f"--ecm {os.environ.get('ECM','')} " if os.environ.get("ECM_TAG") else ""
+    gsel = f"--grid {grid} {ecm_arg}"
     with open(os.environ["GAPS_OUT"], "w") as fh:
         for a, b in runs:
             fh.write(f"{gsel}--start {a} --end {b} --only-missing{extra}\n")
@@ -449,7 +530,7 @@ if os.environ.get("EMIT_GAPS") == "1":
                 continue
             needs = False
             for j in range(1, njobs+1):
-                if f"NANOGEN_{name}_{j}.root" in nano:  # already delivered
+                if delivered(name, j):                  # already delivered
                     continue
                 nst = nqueue.get((name, str(j)), set())
                 if 2 in nst or 1 in nst:                # my live (running/idle) job: leave it
@@ -467,12 +548,41 @@ if os.environ.get("EMIT_GAPS") == "1":
         else: nruns.append([i, i])
     nflav = os.environ.get("FLAVOUR", "")
     nextra = f" --flavour {nflav}" if nflav else ""
-    with open(os.environ["NGAPS_OUT"], "w") as fh:
-        for a, b in nruns:
-            fh.write(f"{gsel}--start {a} --end {b} --only-missing{nextra}\n")
-    print(f"nanogen gaps: {len(ngaps)} point(s) with missing files in {len(nruns)} run(s)")
-    if ngaps:
-        print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in nruns))
+    if backend == "crab":
+        # CRAB is one TASK per point (no index-based seed windows), so a gap is closed by
+        # `crab resubmit` on that point's existing task -- NEVER by submit_nanogen, which
+        # would reuse job-number seeds and duplicate events. For each gap point: if its
+        # CRAB project dir (<workArea>/crab_<req>) exists we emit a resubmit line; if not,
+        # the point was never submitted to CRAB and needs an INITIAL --backend crab submit.
+        workarea = os.environ.get("CRAB_WORKAREA", "")
+        resub, missing = [], []
+        for i in ngaps:
+            req = req_of(point_name(pts[i-1]))
+            projdir = os.path.join(workarea, "crab_" + req)
+            (resub if os.path.isdir(projdir) else missing).append((i, projdir))
+        with open(os.environ["CRAB_RESUB_OUT"], "w") as fh:
+            for i, projdir in resub:
+                fh.write(f"{i}\t{projdir}\n")
+        # never-submitted points -> contiguous ranges for an initial crab submit
+        mruns = []
+        for i, _ in missing:
+            if mruns and i == mruns[-1][1] + 1: mruns[-1][1] = i
+            else: mruns.append([i, i])
+        with open(os.environ["CRAB_MISSING_OUT"], "w") as fh:
+            for a, b in mruns:
+                fh.write(f"{gsel}--start {a} --end {b} --backend crab\n")
+        open(os.environ["NGAPS_OUT"], "w").close()   # skip the condor submit_nanogen path
+        print(f"nanogen gaps (crab): {len(ngaps)} point(s) -- "
+              f"{len(resub)} with a task to resubmit, {len(missing)} not yet submitted")
+        if ngaps:
+            print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in nruns))
+    else:
+        with open(os.environ["NGAPS_OUT"], "w") as fh:
+            for a, b in nruns:
+                fh.write(f"{gsel}--start {a} --end {b} --only-missing{nextra}\n")
+        print(f"nanogen gaps: {len(ngaps)} point(s) with missing files in {len(nruns)} run(s)")
+        if ngaps:
+            print("  " + ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in nruns))
 EOF
 
 # ---------------------------------------------------------------------------
@@ -481,7 +591,37 @@ EOF
 [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || [ "$RESUBMIT_NANO" = 1 ] || exit 0
 
 # ---------------------------------------------------------------------------
-# NANOGEN --only-missing resubmit (printed always; auto-run only with --resubmit-nano)
+# NANOGEN gap resubmit -- CRAB backend
+# ---------------------------------------------------------------------------
+# Under --backend crab a gap is closed per-point: `crab resubmit` on the point's existing
+# task if its CRAB project dir exists, else an INITIAL submit for a point never sent to
+# CRAB. We PRINT the commands (crab resubmit is per-task and needs the crab client; the
+# initial submit isn't idempotent) -- report_batches never auto-runs them here.
+if [ "$BACKEND" = crab ]; then
+  if [ -s "$TMP/crab_resub.txt" ]; then
+    echo
+    echo ">> CRAB resubmit commands for incomplete tasks (run from $HERE, after"
+    echo "   'source /cvmfs/cms.cern.ch/common/crab-setup.sh'):"
+    while IFS="$(printf '\t')" read -r idx projdir; do
+      echo "   crab resubmit -d $projdir   # point $idx"
+    done < "$TMP/crab_resub.txt"
+  fi
+  if [ -s "$TMP/crab_missing.txt" ]; then
+    echo
+    echo ">> ranges with NO CRAB task yet -- these need an INITIAL submission (run from $HERE):"
+    while read -r a; do echo "   ./submit_nanogen.sh $a"; done < "$TMP/crab_missing.txt"
+  fi
+  if [ ! -s "$TMP/crab_resub.txt" ] && [ ! -s "$TMP/crab_missing.txt" ]; then
+    echo; echo ">> no nanogen gaps (crab): every counted point is complete."
+  fi
+  if [ "$RESUBMIT_NANO" = 1 ]; then
+    echo
+    echo ">> --resubmit-nano (crab): the commands above are NOT auto-run. Run the"
+    echo "   'crab resubmit' lines yourself; submit_nanogen for a range with no task yet."
+  fi
+else
+# ---------------------------------------------------------------------------
+# NANOGEN --only-missing resubmit (condor; printed always, auto-run with --resubmit-nano)
 # ---------------------------------------------------------------------------
 # submit_nanogen.sh now gives EACH run its OWN per-run fragment dir, so a later range's
 # fragment regen can never delete an earlier range's still-needed inputs. That removes the
@@ -529,6 +669,7 @@ if [ "$RESUBMIT_NANO" = 1 ]; then
     fi
   fi
 fi
+fi   # end BACKEND condor/crab nanogen branch
 
 [ "$GAPS" = 1 ] || [ "$RESUBMIT" = 1 ] || exit 0    # --resubmit-nano only: done above
 [ -s "$TMP/gaps.txt" ] || { echo; echo ">> no gridpack gaps to resubmit."; exit 0; }

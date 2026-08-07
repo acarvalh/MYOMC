@@ -70,7 +70,14 @@ JOB_OFFSET=0                                  # add to jobidx -> global job numb
 POINT_STRIDE=100000                           # seed span reserved per point (room for up to 99 gjobs)
 JOB_STRIDE=1000                               # seed span reserved per (point,gjob) window
 MAXP=9000                                     # max supported JSON index (9000*100000 = 9e8 ceiling)
-COMENERGY=13600                              # Run 3 centre-of-mass energy (GeV)
+# Centre-of-mass energy (TeV): 13 = Run 2, 13.6 = Run 3 (default, current production),
+# 100 = FCC-hh. --ecm sets the Pythia comEnergy (=ecm*1000 GeV, MUST match the gridpack's
+# beam energy) AND routes the gridpack-input + nanogen-output dirs to the energy-tagged
+# folder so 13/100 TeV never collide with the untagged 13.6 TeV production. --comenergy
+# (GeV) still overrides the derived value for a non-standard beam energy.
+ECM=13.6                                     # 13 | 13.6 | 100
+COMENERGY_OVERRIDE=""                         # set by --comenergy; wins over the --ecm-derived value
+COMENERGY=13600                              # derived from ECM below (Run 3 default)
 # NTHREADS flows through as ncpu to the gridpack's runcmsgrid.sh (via
 # run_generic_tarball_cvmfs.sh), which now runs that many parallel POWHEG streams
 # (~Nx wall speedup; gg->HH is ~11 CPU-s/event). Also = request_cpus and cmsRun
@@ -100,7 +107,8 @@ while [ $# -gt 0 ]; do
     --njobs)    NJOBS_PER_POINT=$2; shift 2;;
     --job-offset) JOB_OFFSET=$2; shift 2;;
     --total-events) TOTAL_EVENTS=$2; shift 2;;
-    --comenergy) COMENERGY=$2; shift 2;;
+    --ecm)       ECM=$2; shift 2;;
+    --comenergy) COMENERGY_OVERRIDE=$2; shift 2;;
     --nthreads) NTHREADS=$2; shift 2;;
     --mem)      MEM=$2; shift 2;;
     --flavour)  FLAVOUR=$2; shift 2;;
@@ -119,6 +127,19 @@ done
 
 case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&2; exit 1;; esac
 
+# Resolve --ecm into the Pythia comEnergy (GeV) + an EOS dir tag. 13.6 TeV (current
+# production) keeps the ORIGINAL untagged gridpack/nanogen dirs; 13/100 TeV get a sibling
+# "_13TeV"/"_100TeV" dir. --comenergy overrides the derived comEnergy but NOT the tag.
+case "$ECM" in
+  13|13.0)   COMENERGY=13000;  ECM_TAG=_13TeV;;
+  13.6)      COMENERGY=13600;  ECM_TAG=;;
+  100|100.0) COMENERGY=100000; ECM_TAG=_100TeV;;
+  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+esac
+[ -n "$COMENERGY_OVERRIDE" ] && COMENERGY=$COMENERGY_OVERRIDE
+GPDIR_4D=$GPDIR_4D$ECM_TAG; GPDIR_5D=$GPDIR_5D$ECM_TAG; GPDIR_9D=$GPDIR_9D$ECM_TAG
+NANO_4D=$NANO_4D$ECM_TAG;   NANO_5D=$NANO_5D$ECM_TAG;   NANO_9D=$NANO_9D$ECM_TAG
+
 # Resolve the grid selection into a bundled points JSON + default gridpack set. An
 # explicit --points / --gridpack-dir overrides the derived default. Fragment names are
 # built from $POINTS (see make_fragments.py), so $POINTS must match $GRIDPACK_DIR.
@@ -132,7 +153,7 @@ esac
 [ -n "$GRIDPACK_DIR" ] || GRIDPACK_DIR=$GRID_GPDIR
 [ -n "$OUTPUT_DIR" ]   || OUTPUT_DIR=$GRID_NANO
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
-echo ">> grid=$GRID  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
+echo ">> grid=$GRID  ecm=${ECM}TeV (comEnergy=$COMENERGY GeV)  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
 
 # --test: quick single-job smoke test on the FIRST gridpack-ready point in the
 # selection. Force 100 events in ONE job, and (below) queue only that one point.

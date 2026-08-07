@@ -57,6 +57,18 @@ def main():
     ap.add_argument("--points", default=os.path.join(
         here, "..", "submission", "FINALgrid_for_SMEFT_5D_leading_plus_ctg.json"))
     ap.add_argument("--outdir", default=os.path.join(here, "cards_test"))
+    # Centre-of-mass energy (TeV). Sets the POWHEG beam energies ebeam1/ebeam2 =
+    # ecm*1000/2 GeV, overriding whatever the template carries. 13 = Run 2, 13.6 =
+    # Run 3 (default, current production), 100 = FCC-hh. The grid is beam-energy
+    # agnostic (same Wilson-coefficient points), so only the beams change here.
+    ap.add_argument("--ecm", type=float, default=13.6,
+                    help="centre-of-mass energy in TeV (13 | 13.6 | 100); default 13.6")
+    # PDF (LHAPDF LHAID) for both beams, written to lhans1/lhans2. 0 = keep the template's
+    # value (90400 = PDF4LHC15_nlo_30_pdfas, the Run-2/3 default). At 100 TeV submit_smeft.sh
+    # passes 93300 = PDF4LHC21_40_pdfas, whose grid (XMin~1e-6, QMax 1e6 GeV) covers FCC-hh
+    # small-x/high-Q where PDF4LHC15 (XMin 6e-6) would hit its grid edge.
+    ap.add_argument("--pdf", type=int, default=0,
+                    help="LHAPDF LHAID for lhans1/lhans2 (0 = keep template value)")
     ap.add_argument("--nmax", type=int, default=3,
                     help="number of points to generate; 0 = all (ignored if --start/--end given)")
     ap.add_argument("--start", type=int, default=0,
@@ -65,6 +77,7 @@ def main():
                     help="last point to generate, 1-based inclusive (0 = to the end)")
     args = ap.parse_args()
 
+    ebeam = args.ecm * 1000.0 / 2.0          # per-beam energy in GeV (ecm split evenly)
     with open(args.template) as f:
         base = f.read()
     # HEFT convention: numevts/iseed are placeholders filled at build / generation
@@ -106,9 +119,18 @@ def main():
         for key in COEFFS:
             if key in point:                     # leave absent coeffs at their template value (0)
                 card = set_param(card, key, point[key])
-        # 13.6 TeV (Run 3) beams
-        card = set_param(card, "ebeam1", 6800)
-        card = set_param(card, "ebeam2", 6800)
+        # Beam energies from --ecm (default 13.6 TeV Run 3 => 6800 each). ebeam is an
+        # int for the usual round values (6500/6800/50000) but formatted generally.
+        card = set_param(card, "ebeam1", int(ebeam) if float(ebeam).is_integer() else ebeam)
+        card = set_param(card, "ebeam2", int(ebeam) if float(ebeam).is_integer() else ebeam)
+        if args.pdf:                          # 0 => leave the template's lhans1/lhans2 as-is
+            # lhans is an integer LHAID; set_param would write it as 93300.0 (float),
+            # so substitute directly to keep the bare-integer form POWHEG expects.
+            for k in ("lhans1", "lhans2"):
+                pat = re.compile(r"^(\s*" + k + r"\s+)(\S+)(.*)$", re.MULTILINE)
+                card, n = pat.subn(lambda m: m.group(1) + str(int(args.pdf)) + m.group(3), card)
+                if n != 1:
+                    raise RuntimeError(f"expected exactly 1 '{k}' line, found {n}")
         name = "powheg_ggHH_SMEFT_" + "_".join(
             f"{k}_{frmt(point[k])}" for k in COEFFS if k in point)
         path = os.path.join(args.outdir, name + ".input")

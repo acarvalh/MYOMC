@@ -22,7 +22,7 @@ fragments/<point>.py            <->  <point>_gridpack.tar.gz   (on EOS)
 | `submit_nanogen.sub` | HTCondor submit description (one job per `point,jobidx`) |
 | `submit_crab.sh`     | **crab** backend: build a cmsRun cfg per point, write a `PrivateMC` CRAB config, `crab submit` |
 | `submit_nanogen.sh`  | driver (both backends): gen fragments → condor `joblist.txt` **or** CRAB tasks |
-| `report_batches.sh`  | read-only progress table: gridpacks + NANOGEN ready, per index batch |
+| `report_batches.sh`  | read-only progress table: gridpacks + NANOGEN ready, per index batch (condor or `--backend crab`, any `--ecm`) |
 
 ## Grid proxy
 Jobs xrdcp gridpacks from EOS (and NANOGEN back), so they need a grid proxy. The driver
@@ -198,11 +198,62 @@ is a ~56h 4-core build. `--gaps` first, then decide.
 
 Point it at a different driver with `--submitter <path>` (default `../gridpack/submit_smeft.sh`).
 
+### Reporting a CRAB run (`--backend crab`)
+By default the report counts flat condor output files (`NANOGEN_<point>_<gjob>.root`) and
+reads `condor_q` for the nanogen queue columns. If you submitted nanogen through **CRAB**,
+pass `--backend crab` so the report counts the right thing:
+
+```bash
+./report_batches.sh --backend crab --grid 5d --ecm 100 --njobs 5
+```
+
+- **"done" is counted by walking the CRAB LFN tree**
+  `NANODIR/<req>/ggHH_SMEFT_NANOGEN/<timestamp>/000X/*.root`, counting `.root` files per
+  `<req>` (= point name minus the `powheg_` prefix, `[:100]` — exactly how `submit_crab.sh`
+  names `outputPrimaryDataset`). The first *count* job-slots of each point are treated as
+  delivered, so the `nanogen files` / `full` columns read the same as condor. Set `--njobs`
+  to your CRAB `totalUnits ÷ unitsPerJob`.
+- **CRAB jobs are not in your local `condor_q`,** so the nanogen `run`/`idle`/`held`
+  columns read **0** under `--backend crab`. Check in-flight status with
+  `crab status -d crab_nanogen/crab_<req>`. (Gridpack columns are unaffected — gridpacks
+  are always condor.)
+
+#### Resubmitting CRAB gaps
+CRAB seeds jobs by job-number-within-task, so a **second submit of a point would duplicate
+events** — `submit_nanogen … --only-missing` is unsafe here. Instead, under `--backend crab`,
+`--gaps`/`--resubmit-nano` resolve each nanogen gap **per point** and only **print** the
+right command (never auto-run):
+
+```bash
+./report_batches.sh --backend crab --grid 5d --ecm 100 --gaps
+```
+```
+nanogen gaps (crab): 3 point(s) -- 1 with a task to resubmit, 2 not yet submitted
+
+>> CRAB resubmit commands for incomplete tasks (run from …/submission, after
+   'source /cvmfs/cms.cern.ch/common/crab-setup.sh'):
+   crab resubmit -d …/crab_nanogen/crab_ggHH_SMEFT_…   # point 2
+>> ranges with NO CRAB task yet -- these need an INITIAL submission (run from …/submission):
+   ./submit_nanogen.sh --grid 5d --ecm 100 --start 3 --end 3 --backend crab
+```
+
+For each gap point the report checks its CRAB project dir
+(`$CRAB_WORKAREA/crab_<req>`, default `./crab_nanogen/crab_<req>` — where `submit_crab.sh`
+runs `crab submit` from). If it **exists**, the point has a task, so the fix is
+`crab resubmit -d …` (safe: re-runs only that task's *failed* jobs — no seed reuse). If it
+**does not**, the point was never submitted to CRAB, so it is grouped into contiguous ranges
+flagged as needing an **initial** `./submit_nanogen.sh … --backend crab`. Override the
+project-dir search root with `CRAB_WORKAREA=/path ./report_batches.sh …` if you ran
+`crab submit` from elsewhere.
+
 Options — all optional, all read-only:
 
 | flag | default | note |
 |------|---------|------|
 | `--grid`    | `5d` | `4d`\|`5d`: picks the JSON **and** its gridpack dir together |
+| `--ecm`     | `13.6` | `13`\|`13.6`\|`100`: read the matching energy-tagged gridpack/nanogen dirs, and thread `--ecm` into the emitted resubmit commands |
+| `--backend` | `condor` | `condor`\|`crab`: how nanogen "done" is counted and how gaps are resubmitted (see below) |
+| `--resubmit-nano` | — | resubmit nanogen gaps: condor runs `submit_nanogen … --only-missing`; crab **prints** `crab resubmit` / initial-submit commands |
 | `--points`  | (from `--grid`) | explicit JSON; overrides `--grid` |
 | `--gpdir`   | (from `--grid`) | explicit gridpack dir; overrides `--grid` |
 | `--nanodir` | `…/smeft_nanogen` | **must match the `--outdir` you submitted with** |
@@ -309,6 +360,28 @@ seed). The gridpacks must be reachable via xrootd from grid worker nodes.
 > `--job-offset`** (see *Seeds* above) — its disjoint index-based windows are
 > collision-free across resubmissions; CRAB ignores `--job-offset`.
 
+## Centre-of-mass energy (`--ecm`)
+`--ecm {13|13.6|100}` (TeV) sets the Pythia `comEnergy` **and** selects energy-tagged
+input/output dirs, matching the gridpack driver `../gridpack/submit_smeft.sh --ecm`. It
+**must match the energy the gridpack was built at** — the PDF and beam energy are baked
+into the gridpack, so nanogen only needs the right `comEnergy` and the matching dirs.
+
+| `--ecm` | `comEnergy` (GeV) | gridpack + output dirs | PDF (baked in the gridpack) |
+|---|---|---|---|
+| `13`   | 13000  | `…_13TeV` | 90400 = PDF4LHC15_nlo_30_pdfas |
+| `13.6` (default, current production) | 13600 | *(untagged — the live dirs)* | 90400 = PDF4LHC15_nlo_30_pdfas |
+| `100` (FCC-hh) | 100000 | `…_100TeV` | 93300 = PDF4LHC21_40_pdfas |
+
+13.6 TeV keeps the original untagged EOS dirs (production untouched); 13 / 100 TeV read and
+write the sibling `…_13TeV` / `…_100TeV` dirs. `--comenergy` overrides only the Pythia
+`comEnergy` (not the dir tag) for special cases.
+
+```bash
+# FCC-hh 100 TeV: reads …_100TeV gridpacks, writes …_100TeV nanogen, comEnergy 100000
+./submit_nanogen.sh --start 1 --end 500 --ecm 100
+./submit_nanogen.sh --start 1 --end 500 --ecm 100 --backend crab
+```
+
 ### Grid selection: 4D vs 5D
 
 `--grid {4d,5d}` picks which **bundled** points grid drives fragment names **and** the
@@ -332,7 +405,8 @@ For a minimal single-job smoke test on a landed 4D gridpack, see
 | `--total-events` | `50000` | **total events per point** |
 | `--njobs`     | `5`      | jobs per point |
 | `--job-offset` | `0`     | add to jobidx → **global job number** for **collision-free top-ups** (see below) |
-| `--comenergy` | `13600`  | √s in GeV (Run 3) |
+| `--ecm` | `13.6` | centre-of-mass energy in TeV: `13`\|`13.6`\|`100`; sets `comEnergy` **and** the energy-tagged gridpack/output dirs (see *Centre-of-mass energy* below) |
+| `--comenergy` | (from `--ecm`) | √s in GeV; overrides only the Pythia `comEnergy`, not the dir tag (advanced) |
 
 Events per job are derived: `events/job = total-events / njobs` (default 100k / 5
 = 20k). `--total-events` must be divisible by `--njobs`. E.g. for 200k in 10 jobs:
