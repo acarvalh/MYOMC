@@ -168,7 +168,9 @@ list_completed_gridpacks() {
 }
 
 cd "$HERE"
-mkdir -p logs "$CARDDIR"
+# Per-energy log dir so report_batches can tell a 13.6 TeV build's .out from a 13/100 TeV
+# one (they share point names). 13.6 keeps the original untagged logs/.
+mkdir -p "logs$ECM_TAG" "$CARDDIR"
 
 # 1) Generate the cards (+ manifest.json) for the requested points.
 #    NON-destructive: we only ADD/overwrite cards in $CARDDIR, never wipe it — jobs
@@ -266,6 +268,7 @@ esac
 
 # 4) Submit (or dry-run).
 SUBMIT_ARGS=(
+  -append "LOGDIR=logs$ECM_TAG"
   -append "PROCESS_TARBALL=$PROCESS_TARBALL"
   -append "OUTPUT_DIR=$OUTPUT_DIR"
   -append "NCORES=$NCORES"

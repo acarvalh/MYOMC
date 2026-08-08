@@ -56,8 +56,8 @@ ASSUME_YES=0                                   # --yes: skip the confirmation
 DRYRUN=0                                       # --dry-run: pass through to the driver
 SUBMITTER=$HERE/../gridpack/submit_smeft.sh    # driver used by --resubmit-gaps
 FLAVOUR=""                                     # --flavour X / --week: passed to the driver
-CARDDIR=$HERE/../gridpack/cards_prod           # where <point>.input cards live
-LOGDIRS="$HERE/../gridpack/logs $HERE/../../condor/logs"   # searched for <point>.*.out
+CARDDIR=""                                     # where <point>.input cards live; empty => cards_prod<ECM_TAG> (submit_smeft.sh tags per --ecm)
+LOGDIRS=""                                     # searched for <point>.*.out; empty => gridpack/logs<ECM_TAG>
 BATCHFILE=""                                   # file of "start stop" lines
 CHUNK=""                                       # uniform blocks of N points
 
@@ -100,6 +100,17 @@ case "$ECM" in
 esac
 GPDIR_4D=$GPDIR_4D$ECM_TAG; GPDIR_5D=$GPDIR_5D$ECM_TAG; GPDIR_9D=$GPDIR_9D$ECM_TAG
 NANODIR_4D=$NANODIR_4D$ECM_TAG; NANODIR_5D=$NANODIR_5D$ECM_TAG; NANODIR_9D=$NANODIR_9D$ECM_TAG
+# Cards live in a per-energy dir too (submit_smeft.sh writes cards_prod<ECM_TAG>), so the
+# untagged 13.6 TeV cards are NOT read for a --ecm 13/100 report. --carddir still overrides.
+[ -n "$CARDDIR" ] || CARDDIR=$HERE/../gridpack/cards_prod$ECM_TAG
+# Logs are per-energy too: submit_smeft.sh writes them to gridpack/logs<ECM_TAG> (LOGDIR
+# -append). Untagged 13.6 keeps its ORIGINAL two dirs (gridpack/logs + the legacy
+# ../../condor/logs, which holds ~3.5k 13.6 TeV .out files). 13/100 TeV read ONLY their
+# own tagged dir, so a 13.6 build's .out is never read as evidence for a --ecm 13/100 gap.
+if [ -z "$LOGDIRS" ]; then
+  if [ -n "$ECM_TAG" ]; then LOGDIRS="$HERE/../gridpack/logs$ECM_TAG"
+  else                       LOGDIRS="$HERE/../gridpack/logs $HERE/../../condor/logs"; fi
+fi
 
 case "$BACKEND" in
   condor|crab) ;;
@@ -171,15 +182,20 @@ fi
 # a gap, not as running. Empty file (no proxy / no schedd) => queue columns read 0.
 : > "$TMP/q.txt"
 : > "$TMP/nq.txt"
+# --ecm filter: a job's target dir is in its Environment as "OUTPUT_DIR=<dir> ...". Match
+# the CURRENT energy's dir (trailing space so untagged smeft_nanogen != smeft_nanogen_100TeV)
+# so a 13.6 TeV job is never miscounted as run/idle/held for a --ecm 13/100 report.
 if [ "$QUEUE" = 1 ]; then
   condor_q -constraint 'regexp("run_smeft_gridpack.sh", Cmd)' \
-           -af JobStatus Args > "$TMP/q.txt" 2>/dev/null || true
+           -af JobStatus Args Environment 2>/dev/null \
+    | awk -v d="OUTPUT_DIR=$GPDIR " 'index($0,d){print $1, $2}' > "$TMP/q.txt" || true
   # NANOGEN jobs: Args is "<point> <gjob>", and the job writes NANOGEN_<point>_<gjob>.root,
   # so (point,gjob) keys the queue exactly like the file it will deliver. CRAB jobs are NOT
   # in the local condor_q, so skip this for --backend crab (nq.txt stays empty => run/idle/
   # held read 0; CRAB in-flight status comes from `crab status`, not this script).
   [ "$BACKEND" = crab ] || condor_q -constraint 'regexp("run_nanogen.sh", Cmd)' \
-           -af JobStatus Args > "$TMP/nq.txt" 2>/dev/null || true
+           -af JobStatus Args Environment 2>/dev/null \
+    | awk -v d="OUTPUT_DIR=$NANODIR " 'index($0,d){print $1, $2, $3}' > "$TMP/nq.txt" || true
 fi
 export NQ_F="$TMP/nq.txt" BACKEND
 
@@ -195,12 +211,15 @@ if [ -n "$OTHERS" ] && [ "$QUEUE" = 1 ]; then
     echo ">> reading colleagues' gridpack + nanogen jobs (pool-wide): $OTHERS"
     condor_q -global -allusers \
       -constraint "regexp(\"run_smeft_gridpack.sh\", Cmd) && ($owner_expr)" \
-      -af Owner Args 2>/dev/null | awk 'NF>=2{a=$2; sub(/\.input$/,"",a); print $1"\t"a}' \
+      -af Owner Args Environment 2>/dev/null \
+      | awk -v d="OUTPUT_DIR=$GPDIR " 'index($0,d) && NF>=2 {a=$2; sub(/\.input$/,"",a); print $1"\t"a}' \
       > "$TMP/oth.txt" || true
-    # same for nanogen; key is "<point>\t<gjob>" so it lines up with the output file
+    # same for nanogen; key is "<point>\t<gjob>" so it lines up with the output file.
+    # OUTPUT_DIR filter keeps a colleague's 13.6 TeV job out of a --ecm 13/100 report.
     condor_q -global -allusers \
       -constraint "regexp(\"run_nanogen.sh\", Cmd) && ($owner_expr)" \
-      -af Owner Args 2>/dev/null | awk 'NF>=3{print $1"\t"$2"\t"$3}' \
+      -af Owner Args Environment 2>/dev/null \
+      | awk -v d="OUTPUT_DIR=$NANODIR " 'index($0,d) && NF>=3 {print $1"\t"$2"\t"$3}' \
       > "$TMP/noth.txt" || true
   fi
 fi
@@ -216,9 +235,11 @@ export CRAB_WORKAREA CRAB_RESUB_OUT="$TMP/crab_resub.txt" CRAB_MISSING_OUT="$TMP
 # directory the submit ran from -- hence a list of dirs, and "no" is weak evidence.
 ls "$CARDDIR" 2>/dev/null | sed -n 's/\.input$//p' | sort -u > "$TMP/cards.txt" || : > "$TMP/cards.txt"
 : > "$TMP/logs.txt"
-for d in $LOGDIRS; do
-  [ -d "$d" ] && ls "$d" 2>/dev/null | sed -n 's/\.[0-9]*\.[0-9]*\.out$//p'
-done | sort -u > "$TMP/logs.txt"
+# A missing LOGDIR (e.g. logs<ECM_TAG> before the first build at that energy) must not
+# abort: with pipefail the `[ -d ]`-false loop body would fail the pipeline. `|| true` guards it.
+{ for d in $LOGDIRS; do
+    [ -d "$d" ] && ls "$d" 2>/dev/null | sed -n 's/\.[0-9]*\.[0-9]*\.out$//p'
+  done | sort -u > "$TMP/logs.txt"; } || true
 export CARDS_F="$TMP/cards.txt" LOGS_F="$TMP/logs.txt"
 
 python3 - "$POINTS" "$TMP/gp.txt" "$TMP/nano.txt" "$NJOBS" "$GPDIR" "$NANODIR" \

@@ -61,10 +61,13 @@ Requirements            = (TARGET.KFlops >= 3000000)
 # job matches ~75 slots pool-wide vs ~279 for 72h. (The driver -appends this too.)
 +JobFlavour             = "testmatch"
 
-# Per-job logs (keep in a logs/ subdir).
-output                  = logs/$(point).$(ClusterId).$(ProcId).out
-error                   = logs/$(point).$(ClusterId).$(ProcId).err
-log                     = logs/smeft.$(ClusterId).log
+# Per-job logs (keep in a logs/ subdir). LOGDIR is per-energy: the driver -appends
+# LOGDIR=logs<ECM_TAG> so a 13/100 TeV build doesn't share a .out with the 13.6 TeV run
+# (same point names) -- report_batches reads the matching dir. Default is the untagged logs.
+LOGDIR                  = logs
+output                  = $(LOGDIR)/$(point).$(ClusterId).$(ProcId).out
+error                   = $(LOGDIR)/$(point).$(ClusterId).$(ProcId).err
+log                     = $(LOGDIR)/smeft.$(ClusterId).log
 
 # Hold handling: recover transient holds instead of deleting them (a held job used
 # to be removed on the spot, silently losing points).
