@@ -251,7 +251,7 @@ Options — all optional, all read-only:
 | flag | default | note |
 |------|---------|------|
 | `--grid`    | `5d` | `4d`\|`5d`: picks the JSON **and** its gridpack dir together |
-| `--ecm`     | `13.6` | `13`\|`13.6`\|`100`: read the matching energy-tagged gridpack/nanogen dirs, and thread `--ecm` into the emitted resubmit commands |
+| `--ecm`     | `13.6` | `13`\|`13.6`\|`14`\|`100`: read the matching energy-tagged gridpack/nanogen dirs, and thread `--ecm` into the emitted resubmit commands. `13`/`14` also count against the reduced half grid |
 | `--backend` | `condor` | `condor`\|`crab`: how nanogen "done" is counted and how gaps are resubmitted (see below) |
 | `--resubmit-nano` | — | resubmit nanogen gaps: condor runs `submit_nanogen … --only-missing`; crab **prints** `crab resubmit` / initial-submit commands |
 | `--points`  | (from `--grid`) | explicit JSON; overrides `--grid` |
@@ -361,7 +361,7 @@ seed). The gridpacks must be reachable via xrootd from grid worker nodes.
 > collision-free across resubmissions; CRAB ignores `--job-offset`.
 
 ## Centre-of-mass energy (`--ecm`)
-`--ecm {13|13.6|100}` (TeV) sets the Pythia `comEnergy` **and** selects energy-tagged
+`--ecm {13|13.6|14|100}` (TeV) sets the Pythia `comEnergy` **and** selects energy-tagged
 input/output dirs, matching the gridpack driver `../gridpack/submit_smeft.sh --ecm`. It
 **must match the energy the gridpack was built at** — the PDF and beam energy are baked
 into the gridpack, so nanogen only needs the right `comEnergy` and the matching dirs.
@@ -370,16 +370,29 @@ into the gridpack, so nanogen only needs the right `comEnergy` and the matching 
 |---|---|---|---|
 | `13`   | 13000  | `…_13TeV` | 90400 = PDF4LHC15_nlo_30_pdfas |
 | `13.6` (default, current production) | 13600 | *(untagged — the live dirs)* | 90400 = PDF4LHC15_nlo_30_pdfas |
+| `14`   | 14000  | `…_14TeV` | 90400 = PDF4LHC15_nlo_30_pdfas |
 | `100` (FCC-hh) | 100000 | `…_100TeV` | 93300 = PDF4LHC21_40_pdfas |
 
-13.6 TeV keeps the original untagged EOS dirs (production untouched); 13 / 100 TeV read and
-write the sibling `…_13TeV` / `…_100TeV` dirs. `--comenergy` overrides only the Pythia
-`comEnergy` (not the dir tag) for special cases.
+13.6 TeV keeps the original untagged EOS dirs (production untouched); 13 / 14 / 100 TeV read
+and write the sibling `…_13TeV` / `…_14TeV` / `…_100TeV` dirs. `--comenergy` overrides only
+the Pythia `comEnergy` (not the dir tag) for special cases.
+
+**Reduced ("half") grid at 13 and 14 TeV.** These two cost-saving energies run a reduced
+point set: the pairwise-2D scans **and** the axis points are kept in full, only the
+many-operator **Gaussian block is halved** (every other point in file order). The swap is
+**automatic and needs no extra flag** — with `--ecm 13`/`14` on `--grid 5d`/`9d`, the driver
+(and `report_batches.sh`) pick `FINALgrid_for_SMEFT_{5D,9D}_halfgauss_for_13_14TeV.json`
+instead of the full JSON, so gridpack → nanogen → report all iterate the **same** reduced
+set (9D: 2000 → 1416; 5D: 2500 → 1651). Pass an explicit `--points` to override. See the
+gridpack README's *Reduced grid* section for the full rationale.
 
 ```bash
 # FCC-hh 100 TeV: reads …_100TeV gridpacks, writes …_100TeV nanogen, comEnergy 100000
 ./submit_nanogen.sh --start 1 --end 500 --ecm 100
 ./submit_nanogen.sh --start 1 --end 500 --ecm 100 --backend crab
+
+# HL-LHC 14 TeV: reads …_14TeV gridpacks, writes …_14TeV nanogen, half grid (auto)
+./submit_nanogen.sh --ncards 0 --ecm 14
 ```
 
 ### Grid selection: 4D vs 5D
@@ -405,7 +418,7 @@ For a minimal single-job smoke test on a landed 4D gridpack, see
 | `--total-events` | `50000` | **total events per point** |
 | `--njobs`     | `5`      | jobs per point |
 | `--job-offset` | `0`     | add to jobidx → **global job number** for **collision-free top-ups** (see below) |
-| `--ecm` | `13.6` | centre-of-mass energy in TeV: `13`\|`13.6`\|`100`; sets `comEnergy` **and** the energy-tagged gridpack/output dirs (see *Centre-of-mass energy* below) |
+| `--ecm` | `13.6` | centre-of-mass energy in TeV: `13`\|`13.6`\|`14`\|`100`; sets `comEnergy` **and** the energy-tagged gridpack/output dirs; `13`/`14` auto-use the reduced half grid (see *Centre-of-mass energy* below) |
 | `--comenergy` | (from `--ecm`) | √s in GeV; overrides only the Pythia `comEnergy`, not the dir tag (advanced) |
 
 Events per job are derived: `events/job = total-events / njobs` (default 100k / 5

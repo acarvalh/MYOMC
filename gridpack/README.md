@@ -29,6 +29,11 @@ cd MYOMC/gridpack          # <-- run submissions from here (cards.list, logs/ ar
 ./submit_smeft.sh --ncards 0               # all points in the grid
 ```
 
+`submit_smeft.sub` sets `max_materialize = 800`, so up to **800 jobs from one submission
+are live (running + idle) at a time**; the rest wait in the queue and materialize as slots
+free up. This is a schedd-protection throttle, independent of the pool slot capacity in
+*Why `testmatch`* below — raise it only if the schedd can take more late-materialized jobs.
+
 Output gridpacks land in `--outdir` (default:
 `root://eosuser.cern.ch//eos/user/a/acarvalh/smeft_gridpacks_5param_keep_stage1`).
 A point is "done" when `<point>_gridpack.tar.gz` appears there; re-runs skip completed
@@ -206,12 +211,12 @@ though that sample is leading-only — CtG ≠ 0 subleading has never been measu
 | `--report` | off | print done/missing status, do not submit |
 | `--dry-run` | off | build cards + `cards.list`, print submit args, do not submit |
 | `--test` | off | coarse smoke build of the FIRST selected point (degraded stats) |
-| `--ecm N` | 13.6 | centre-of-mass energy in TeV: `13` \| `13.6` \| `100` (FCC-hh); see below |
+| `--ecm N` | 13.6 | centre-of-mass energy in TeV: `13` \| `13.6` \| `14` \| `100` (FCC-hh); see below |
 | `--pdf LHAID` | (from `--ecm`) | LHAPDF `lhans1/lhans2` override; default keeps the template's `90400`, except `--ecm 100` auto-selects `93300` |
 
 ## Centre-of-mass energy (`--ecm`) and PDF
 
-`--ecm {13|13.6|100}` (TeV) sets the POWHEG per-beam energies
+`--ecm {13|13.6|14|100}` (TeV) sets the POWHEG per-beam energies
 `ebeam1 = ebeam2 = ecm*1000/2` **and** routes output to an energy-tagged EOS dir and
 card dir so different energies never overwrite each other (the coefficient grid — and
 therefore the card/gridpack names — is energy-agnostic).
@@ -220,11 +225,36 @@ therefore the card/gridpack names — is energy-agnostic).
 |---|---|---|---|
 | `13`   | 6500  | 90400 = PDF4LHC15_nlo_30_pdfas | `…_13TeV` / `cards_prod_13TeV` |
 | `13.6` (default, current production) | 6800 | 90400 = PDF4LHC15_nlo_30_pdfas | *(untagged — the live dirs)* |
+| `14`   | 7000  | 90400 = PDF4LHC15_nlo_30_pdfas | `…_14TeV` / `cards_prod_14TeV` |
 | `100` (FCC-hh) | 50000 | **93300 = PDF4LHC21_40_pdfas** (auto) | `…_100TeV` / `cards_prod_100TeV` |
 
 - **13.6 TeV keeps the original untagged dirs** so existing Run-3 production is untouched;
-  13 / 100 TeV write to sibling `…_13TeV` / `…_100TeV` dirs (created empty under
-  `/eos/user/a/acarvalh/`). The energy-independent process tarball is shared across all.
+  13 / 14 / 100 TeV write to sibling `…_13TeV` / `…_14TeV` / `…_100TeV` dirs. The 13 / 100 TeV
+  dirs were pre-created empty under `/eos/user/a/acarvalh/`; **the `…_14TeV` siblings must be
+  created before the first 14 TeV submit.** The energy-independent process tarball is shared.
+
+### Reduced ("half") grid at 13 and 14 TeV — automatic
+
+13 and 14 TeV are cost-saving energies, so they run a **reduced point set** rather than the
+full grid. The pairwise-2D scans **and** the axis (single-operator) points are kept in
+**full**; only the many-operator **Gaussian block is halved** (every other point, in file
+order — "one yes, one no"). 13 and 14 use the **identical** subset, and the full grid at
+13.6 TeV is the reference against which "is half enough?" is tested.
+
+This is **wired to `--ecm` and needs no extra flag.** When `--ecm` is `13` or `14` and
+`--grid` is `5d`/`9d`, all three drivers (`submit_smeft.sh`, `../submission/submit_nanogen.sh`,
+`../submission/report_batches.sh`) automatically swap the points JSON to the matching
+reduced file, so build → nanogen → report all count against the **same** reduced universe:
+
+| `--grid` | full JSON (13.6 / 100 TeV) | reduced JSON (13 / 14 TeV) | points |
+|---|---|---|---|
+| `9d` | `FINALgrid_for_SMEFT_9D_extension_only.json` | `FINALgrid_for_SMEFT_9D_halfgauss_for_13_14TeV.json` | 2000 → **1416** (816 2D + 16 axis + 584/1168 Gaussian) |
+| `5d` | `FINALgrid_for_SMEFT_5D_leading_plus_ctg.json` | `FINALgrid_for_SMEFT_5D_halfgauss_for_13_14TeV.json` | 2500 → **1651** (800 2D + 1 SM + 850/1699 Gaussian) |
+
+Regenerate a reduced file from its full source by keeping every point with fewer than 3
+non-zero coefficients (2D scan, axis, SM) plus every **other** point of the ≥3-non-zero
+(Gaussian) block, preserving file order. Pass an explicit `--points <json>` to any driver
+to override the auto-swap (e.g. to force the full grid at 13/14 TeV).
 - **The PDF is baked into the gridpack at build time** via the card's `lhans1/lhans2`, so
   nanogen needs no PDF argument — it inherits whatever the gridpack was built with.
   `makeSMEFTCards.py` writes `lhans` as a **bare integer** (POWHEG requires it).
@@ -236,8 +266,9 @@ therefore the card/gridpack names — is energy-agnostic).
 
 ```bash
 ./submit_smeft.sh --start 1 --end 200 --ecm 100      # FCC-hh: ebeam 50000, PDF 93300, …_100TeV dir
-./submit_smeft.sh --start 1 --end 200 --ecm 13        # Run 2: ebeam 6500, …_13TeV dir
-./submit_smeft.sh --start 1 --end 200                 # default 13.6 TeV, untagged production dir
+./submit_smeft.sh --start 1 --end 200 --ecm 13        # Run 2: ebeam 6500, …_13TeV dir, half grid (auto)
+./submit_smeft.sh --ncards 0            --ecm 14        # HL-LHC: ebeam 7000, …_14TeV dir, half grid (auto)
+./submit_smeft.sh --start 1 --end 200                 # default 13.6 TeV, untagged production dir, full grid
 ```
 
 ## Files

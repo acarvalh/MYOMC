@@ -27,7 +27,7 @@ END=0                                       # last point, 1-based inclusive (0 =
 # 100 = FCC-hh. Sets the POWHEG beams (ebeam=ecm*1000/2) in makeSMEFTCards.py AND routes
 # cards + gridpacks to an energy-tagged dir so 13/100 TeV never collide with the in-flight
 # 13.6 TeV output (which keeps the original untagged paths). See ECM_TAG resolution below.
-ECM=13.6                                    # 13 | 13.6 | 100
+ECM=13.6                                    # 13 | 13.6 | 14 | 100
 # PDF (LHAPDF LHAID) baked into the cards' lhans1/lhans2. Empty => keep the template's
 # 90400 (PDF4LHC15_nlo_30_pdfas) for 13/13.6 TeV. At 100 TeV it DEFAULTS to the FCC-hh
 # recommendation 93300 (PDF4LHC21_40_pdfas) — see the --ecm resolution below. --pdf overrides.
@@ -110,6 +110,7 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
+POINTS_CLI=$POINTS   # remember whether --points was given, before --grid/--ecm defaults fill it
 
 # Resolve --ecm into the per-beam energy + an output tag. 13.6 TeV (current production)
 # keeps the ORIGINAL untagged EOS/card dirs so it is untouched; 13 and 100 TeV get a
@@ -117,8 +118,9 @@ done
 case "$ECM" in
   13|13.0)   ECM_TAG=_13TeV;;
   13.6)      ECM_TAG=;;
+  14|14.0)   ECM_TAG=_14TeV;;                                 # Run 3 HL-LHC; PDF4LHC15 default like 13/13.6
   100|100.0) ECM_TAG=_100TeV; [ -n "$PDF" ] || PDF=93300;;   # FCC-hh: PDF4LHC21_40_pdfas
-  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+  *) echo "--ecm must be 13, 13.6, 14 or 100 (TeV); got '$ECM'" >&2; exit 1;;
 esac
 OUTDIR_4D=$OUTDIR_4D$ECM_TAG
 OUTDIR_5D=$OUTDIR_5D$ECM_TAG
@@ -134,6 +136,16 @@ case "$GRID" in
   9d) [ -n "$POINTS" ] || POINTS=$JSON_9D; [ -n "$OUTPUT_DIR" ] || OUTPUT_DIR=$OUTDIR_9D;;
   *)  echo "--grid must be 4d, 5d or 9d (got '$GRID')" >&2; exit 1;;
 esac
+# 13/14 TeV run a REDUCED grid: pairwise-2D scan + axis points kept in full, the
+# many-operator Gaussian block halved (one-in-two, file order). Reduced JSONs live
+# beside the full ones. Applied only when --points was NOT given, for 5d/9d, and the
+# tag energy-swaps gridpacks -> nanogen -> report onto the SAME reduced point set.
+if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ]; }; then
+  case "$GRID" in
+    5d|9d) HALF=$SUBDIR/FINALgrid_for_SMEFT_${GRID^^}_halfgauss_for_13_14TeV.json
+           [ -f "$HALF" ] && POINTS=$HALF;;
+  esac
+fi
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
 echo ">> grid=$GRID  ecm=${ECM}TeV  pdf=${PDF:-90400(template)}  points=$(basename "$POINTS")  cards=$CARDDIR  gridpacks=$OUTPUT_DIR"
 

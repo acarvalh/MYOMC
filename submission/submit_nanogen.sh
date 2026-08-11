@@ -75,7 +75,7 @@ MAXP=9000                                     # max supported JSON index (9000*1
 # beam energy) AND routes the gridpack-input + nanogen-output dirs to the energy-tagged
 # folder so 13/100 TeV never collide with the untagged 13.6 TeV production. --comenergy
 # (GeV) still overrides the derived value for a non-standard beam energy.
-ECM=13.6                                     # 13 | 13.6 | 100
+ECM=13.6                                     # 13 | 13.6 | 14 | 100
 COMENERGY_OVERRIDE=""                         # set by --comenergy; wins over the --ecm-derived value
 COMENERGY=13600                              # derived from ECM below (Run 3 default)
 # NTHREADS flows through as ncpu to the gridpack's runcmsgrid.sh (via
@@ -124,6 +124,7 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
+POINTS_CLI=$POINTS   # remember whether --points was given, before --grid/--ecm defaults fill it
 
 case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&2; exit 1;; esac
 
@@ -133,8 +134,9 @@ case "$BACKEND" in condor|crab) ;; *) echo "--backend must be condor or crab" >&
 case "$ECM" in
   13|13.0)   COMENERGY=13000;  ECM_TAG=_13TeV;;
   13.6)      COMENERGY=13600;  ECM_TAG=;;
+  14|14.0)   COMENERGY=14000;  ECM_TAG=_14TeV;;
   100|100.0) COMENERGY=100000; ECM_TAG=_100TeV;;
-  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+  *) echo "--ecm must be 13, 13.6, 14 or 100 (TeV); got '$ECM'" >&2; exit 1;;
 esac
 [ -n "$COMENERGY_OVERRIDE" ] && COMENERGY=$COMENERGY_OVERRIDE
 GPDIR_4D=$GPDIR_4D$ECM_TAG; GPDIR_5D=$GPDIR_5D$ECM_TAG; GPDIR_9D=$GPDIR_9D$ECM_TAG
@@ -152,6 +154,15 @@ esac
 [ -n "$POINTS" ]       || POINTS=$GRID_JSON
 [ -n "$GRIDPACK_DIR" ] || GRIDPACK_DIR=$GRID_GPDIR
 [ -n "$OUTPUT_DIR" ]   || OUTPUT_DIR=$GRID_NANO
+# 13/14 TeV run the REDUCED grid (2D scan + axis in full, Gaussian block halved). The
+# reduced JSON must match what submit_smeft built and what report_batches counts, so
+# swap it in whenever --points was not given explicitly, for the 5d/9d grids.
+if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ]; }; then
+  case "$GRID" in
+    5d|9d) HALF=$HERE/FINALgrid_for_SMEFT_${GRID^^}_halfgauss_for_13_14TeV.json
+           [ -f "$HALF" ] && POINTS=$HALF;;
+  esac
+fi
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
 echo ">> grid=$GRID  ecm=${ECM}TeV (comEnergy=$COMENERGY GeV)  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
 

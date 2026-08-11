@@ -1,6 +1,6 @@
 #!/bin/bash
 # Print a per-batch table of how many gridpacks and nanogen files are ready on EOS.
-#   ./report_batches.sh [--grid 4d|5d|9d] [--ecm 13|13.6|100] [--points <json>]
+#   ./report_batches.sh [--grid 4d|5d|9d] [--ecm 13|13.6|14|100] [--points <json>]
 #                       [--gpdir <url>] [--nanodir <url>] [--njobs <n>] [--backend condor|crab]
 #                       [--batches <file>] [--chunk <n>] [--no-queue]
 #                       [--others u1,u2] [--gaps]
@@ -18,7 +18,7 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # --grid selects the JSON *and* its matching gridpack dir, exactly as submit_nanogen.sh
 # does; the pair must stay together or the index -> point mapping silently shifts.
 GRID=5d
-# --ecm {13|13.6|100} TeV: report the matching energy-tagged EOS dirs. 13.6 (default,
+# --ecm {13|13.6|14|100} TeV: report the matching energy-tagged EOS dirs. 13.6 (default,
 # current production) uses the ORIGINAL untagged dirs; 13/100 TeV read the sibling
 # "_13TeV"/"_100TeV" dirs. Threaded into the resubmit commands this prints too.
 ECM=13.6
@@ -90,13 +90,15 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
+POINTS_CLI=$POINTS   # remember whether --points was given, before --grid/--ecm defaults fill it
 
 # Resolve --ecm into the EOS dir tag (empty for the untagged 13.6 TeV production).
 case "$ECM" in
   13|13.0)   ECM_TAG=_13TeV;;
   13.6)      ECM_TAG=;;
+  14|14.0)   ECM_TAG=_14TeV;;
   100|100.0) ECM_TAG=_100TeV;;
-  *) echo "--ecm must be 13, 13.6 or 100 (TeV); got '$ECM'" >&2; exit 1;;
+  *) echo "--ecm must be 13, 13.6, 14 or 100 (TeV); got '$ECM'" >&2; exit 1;;
 esac
 GPDIR_4D=$GPDIR_4D$ECM_TAG; GPDIR_5D=$GPDIR_5D$ECM_TAG; GPDIR_9D=$GPDIR_9D$ECM_TAG
 NANODIR_4D=$NANODIR_4D$ECM_TAG; NANODIR_5D=$NANODIR_5D$ECM_TAG; NANODIR_9D=$NANODIR_9D$ECM_TAG
@@ -133,6 +135,15 @@ case $GRID in
   *)  echo "--grid must be 4d, 5d or 9d (got '$GRID')" >&2; exit 1;;
 esac
 POINTS=${POINTS:-$GRID_JSON}
+# 13/14 TeV report against the REDUCED grid that submit_smeft/submit_nanogen actually
+# build (2D scan + axis in full, Gaussian block halved); otherwise the dropped Gaussian
+# points would be flagged as perpetually-missing gridpacks. Skipped if --points was given.
+if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ]; }; then
+  case "$GRID" in
+    5d|9d) HALF=$HERE/FINALgrid_for_SMEFT_${GRID^^}_halfgauss_for_13_14TeV.json
+           [ -f "$HALF" ] && POINTS=$HALF;;
+  esac
+fi
 GPDIR=${GPDIR:-$GRID_GPDIR}
 NANODIR=${NANODIR:-$GRID_NANO}
 export GRID ECM ECM_TAG

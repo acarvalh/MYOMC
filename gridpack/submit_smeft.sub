@@ -91,7 +91,7 @@ periodic_remove         = ( (JobStatus == 5) && \
                           ( (time() - EnteredCurrentStatus) > 3600 || NumJobStarts > 5 ) ) || \
                           ( (JobStatus == 1) && (NumJobStarts > 3) )
 # Throttle how many jobs materialize at once (protects the schedd for 2500 points).
-max_materialize         = 200
+max_materialize         = 800
 
 # Queue one job per card listed in cards.list; expose a short tag as $(point).
 queue point,card from cards.list
