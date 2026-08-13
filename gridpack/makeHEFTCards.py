@@ -52,10 +52,9 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     ap = argparse.ArgumentParser()
     ap.add_argument("--template", default=os.path.join(here, "powheg-2-heft.input"))
-    ap.add_argument("--csv", default=os.path.join(
-        here, "..", "..", "..", "cms_ANs", "report5", "HHMatrix", "scripts",
-        "coefficients", "gghh_heft_basis.csv"),
-        help="HEFT-basis CSV (point,kappa_lambda,kappa_t,c2,cg,c2g)")
+    ap.add_argument("--csv", default=os.path.join(here, "gghh_heft_basis.csv"),
+        help="HEFT-basis CSV (point,kappa_lambda,kappa_t,c2,cg,c2g); "
+             "in-repo copy so no private path is required")
     ap.add_argument("--extra", default="",
                     help="comma list of ADDITIONAL CSVs (same columns) appended to "
                          "--csv, e.g. validation_points.csv")

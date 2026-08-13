@@ -274,8 +274,10 @@ to override the auto-swap (e.g. to force the full grid at 13/14 TeV).
 ## HEFT benchmark basis (`submit_heft.sh`) — basis-only, for cross sections
 
 A **separate, self-contained** production that builds gridpacks for the HEFT
-anomalous-coupling **benchmark basis** (`gghh_heft_basis.csv`, points BM1…BM23),
-run at **14 TeV** to extract the per-benchmark cross sections. It runs the SAME
+anomalous-coupling **benchmark basis** (`gghh_heft_basis.csv`, points BM1…BM23 —
+an **in-repo copy** committed next to the scripts, so no private path is needed;
+`--csv <path>` overrides), run at **14 TeV** to extract the per-benchmark cross
+sections. It runs the SAME
 POWHEG ggHH process in its **native HEFT mode** (`usesmeft 0`) — **no SMEFT→HEFT
 mapping is done anywhere**. The CSV columns go straight into the HEFT couplings:
 
@@ -339,4 +341,5 @@ basis only. The report's source CSV is untouched — validation lives in a local
 | `submit_heft.sh` | **HEFT basis-only** driver (BM1…BM23, 14 TeV, native HEFT) |
 | `makeHEFTCards.py` | one HEFT card per benchmark from `gghh_heft_basis.csv` (+`--extra` CSVs) |
 | `powheg-2-heft.input` | base HEFT template (`usesmeft 0`, five anomalous couplings) |
-| `validation_points.csv` | 4 single-coupling validation points appended to the basis by default |
+| `gghh_heft_basis.csv` | in-repo copy of the 23-point HEFT benchmark basis (default `--csv`) |
+| `validation_points.csv` | 5 validation points (VAL_SM + 4 single-coupling) appended to the basis by default |

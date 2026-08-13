@@ -30,7 +30,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 GEN_DIR=${GEN_DIR:-$HERE}
 
 # -------- defaults (override via flags) --------
-CSV=${CSV:-/afs/cern.ch/work/a/acarvalh/cms_ANs/report5/HHMatrix/scripts/coefficients/gghh_heft_basis.csv}
+CSV=${CSV:-$GEN_DIR/gghh_heft_basis.csv}   # in-repo copy of the benchmark basis (self-contained; no private path)
 VALIDATION_CSV=$GEN_DIR/validation_points.csv  # 4 single-coupling validation points appended by default
 USE_VALIDATION=1                             # 0 => basis only (no validation points)
 NCARDS=0                                     # 0 = all benchmarks in the CSV
