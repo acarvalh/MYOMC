@@ -1,0 +1,91 @@
+! ggHH production parameters -- HEFT (anomalous-coupling) parametrization.
+! Companion to powheg-2.input (which runs usesmeft 1). This card runs the SAME
+! POWHEG ggHH process in its NATIVE HEFT mode: usesmeft 0 selects the five
+! anomalous couplings (chhh, ct, ctt, cggh, cgghh) and IGNORES the Warsaw Wilson
+! coefficients entirely -- no SMEFT->HEFT mapping is done anywhere. makeHEFTCards.py
+! fills chhh/ct/ctt/cggh/cgghh per benchmark point from gghh_heft_basis.csv.
+! hmass 125            ! Higgs boson mass, hardcoded to 125 in the virtual ME
+! topmass 173          ! top quark mass, hardcoded to 173 in the virtual ME
+hdecaymode -1        ! PDG code for Higgs decay products (affects only the SMC); -1 = all closed
+
+! Choose EFT parametrization
+usesmeft    0        ! 0: HEFT parametrization (use chhh/ct/ctt/cggh/cgghh; ignore CHbox,CH,CuH,CHG; no truncation)
+                     ! 1: SMEFT (Warsaw) parametrization
+                     ! 2: HEFT with truncation (testing / SILH-Lag.)
+
+! Values of the Higgs couplings w.r.t SM: HEFT parametrization (SM = 1,1,0,0,0).
+! These five lines are the ONLY couplings makeHEFTCards.py substitutes. CSV column
+! -> POWHEG key: kappa_lambda->chhh, kappa_t->ct, c2->ctt, cg->cggh, c2g->cgghh.
+chhh      1.0       ! Trilinear Higgs self-coupling            (kappa_lambda)
+ct        1.0       ! Top-Higgs Yukawa coupling                (kappa_t)
+ctt       0.0       ! Two-top-two-Higgs (tthh) coupling        (c2)
+cggh      0.0       ! Effective gluon-gluon-Higgs coupling     (cg)
+cgghh     0.0       ! Effective two-gluon-two-Higgses coupling (c2g)
+
+! SMEFT (Warsaw) block -- IGNORED when usesmeft 0, kept so the template parses and
+! so a card diff against powheg-2.input is minimal. Left at SM/zero values.
+Lambda      1.0      ! EFT counting mass Scale (in TeV)
+CHbox       0.0
+CHD         0.0
+CH          0.0
+CuH         0.0
+CHG         0.0
+SMEFTtruncation  1   ! ignored in HEFT mode
+includesubleading  0 ! ignored in HEFT mode (subleading operators are SMEFT-only)
+CtG         0
+CQt         0
+CQt8        0
+CQQtt       0
+CQQ8        0
+GAMMA5BMHV  0
+WCscaledependence   0
+inputscaleEFT       173
+EFTscfact           1d0
+
+! general parameters:
+numevts  NEVENTS     ! placeholder; substituted by run_smeft_gridpack.sh (build) and runcmsgrid.sh (generation)
+ih1         1        ! hadron 1 (1 for protons)
+ih2         1        ! hadron 2 (1 for protons)
+ebeam1 7000d0        ! energy of beam 1 (14 TeV default; overwritten per --ecm by makeHEFTCards.py)
+ebeam2 7000d0        ! energy of beam 2
+lhans1 90400         ! pdf set for hadron 1 (LHA numbering; PDF4LHC15_nlo_30_pdfas)
+lhans2 90400 	     ! pdf set for hadron 2
+
+! Parameters to allow or not the use of stored data
+use-old-grid    1
+use-old-ubound  1
+!
+ncall1  10000        ! calls initializing the integration grid
+itmx1       3
+ncall2  10000        ! calls computing the integral / upper bound
+itmx2       3
+foldcsi     1
+foldy       1
+foldphi     1
+nubound 10000
+
+! scale settings:
+facscfact   1d0
+renscfact   1d0
+alphas_from_pdf 1
+
+! Born, plots and powheg strategy:
+fastbtlbound      1
+storemintupb      1
+ubexcess_correct  1
+storeinfo_rwgt    1
+softtest          0
+colltest          0
+
+! PARAMETERS needed for ggHH
+hdamp           250
+
+! PARAMETERS for parallel runnning
+iseed    SEED        ! placeholder; ignored while manyseeds=1 (parallel gridpack build)
+manyseeds 1
+parallelstage 4
+xgriditeration 1
+maxseeds    9999
+
+check_bad_st1 1
+check_bad_st2 1
