@@ -271,13 +271,72 @@ to override the auto-swap (e.g. to force the full grid at 13/14 TeV).
 ./submit_smeft.sh --start 1 --end 200                 # default 13.6 TeV, untagged production dir, full grid
 ```
 
+## HEFT benchmark basis (`submit_heft.sh`) — basis-only, for cross sections
+
+A **separate, self-contained** production that builds gridpacks for the HEFT
+anomalous-coupling **benchmark basis** (`gghh_heft_basis.csv`, points BM1…BM23),
+run at **14 TeV** to extract the per-benchmark cross sections. It runs the SAME
+POWHEG ggHH process in its **native HEFT mode** (`usesmeft 0`) — **no SMEFT→HEFT
+mapping is done anywhere**. The CSV columns go straight into the HEFT couplings:
+
+| CSV column | POWHEG key | |
+|---|---|---|
+| `kappa_lambda` | `chhh` | trilinear |
+| `kappa_t` | `ct` | top Yukawa |
+| `c2` | `ctt` | ttHH |
+| `cg` | `cggh` | ggH effective |
+| `c2g` | `cgghh` | ggHH effective |
+
+> The `cg`/`c2g` → `cggh`/`cgghh` assignment is **direct** (value-for-value). If your
+> benchmark `cg`/`c2g` carry a normalization factor relative to POWHEG's
+> `cggh`/`cgghh`, adjust it in `makeHEFTCards.py` (`COL2KEY`) before building.
+
+It **reuses** the shared worker (`run_smeft_gridpack.sh`, card-agnostic) and submit
+file (`submit_smeft.sub`), but has its own template, cards, EOS output and logs, so
+it never collides with the SMEFT production.
+
+**Validation points.** In addition to the 23 basis benchmarks, four single-coupling
+**validation** points (`validation_points.csv`) are appended by default — each has
+one coupling off-SM and the rest at SM (κλ=1, κt=1, c2=cg=c2g=0):
+
+| point | κλ | κt | c2 | cg | c2g |
+|---|---|---|---|---|---|
+| `VAL_SM`     | 1    | 1 | 0 | 0 | 0 |
+| `VAL_kl5`    | 5    | 1 | 0 | 0 | 0 |
+| `VAL_kl2p45` | 2.45 | 1 | 0 | 0 | 0 |
+| `VAL_c2_3`   | 1    | 1 | 3 | 0 | 0 |
+| `VAL_c2g_1`  | 1    | 1 | 0 | 0 | 1 |
+
+So the default production is **28 points** (23 + 5). Use `--no-validation` for the
+basis only. The report's source CSV is untouched — validation lives in a local CSV.
+
+```bash
+./submit_heft.sh                       # 23 basis + 5 validation = 28 points, 14 TeV
+./submit_heft.sh --no-validation       # the 23 basis benchmarks only
+./submit_heft.sh --points BM1,VAL_kl5  # a named subset (basis and/or validation)
+./submit_heft.sh --ncards 3            # first 3 (test)
+./submit_heft.sh --test                # coarse smoke build of the first point
+./submit_heft.sh --dry-run             # build cards + cards.list, submit nothing
+./submit_heft.sh --report              # which gridpacks are done
+```
+
+- Cards: `cards_heft_14TeV/powheg_ggHH_HEFT_<BM>.input`; gridpacks:
+  `…/gghh_heft_basis_gridpacks_14TeV/`; logs: `logs_heft_14TeV/`.
+- Same `--ecm`/`--pdf`/`--only-missing`/`--flavour`/`--mem` semantics as the SMEFT driver.
+- Extract the cross sections afterwards with `../tools/gridpack_xsec.py <gridpack-dir>`
+  (no `--points`; the index column is left blank, rows keyed by BM name).
+
 ## Files
 
 | file | role |
 |---|---|
 | `submit_smeft.sh` | driver: cards → `cards.list` → `condor_submit` |
-| `submit_smeft.sub` | HTCondor submit description (one job per point) |
-| `run_smeft_gridpack.sh` | worker job: stage tarball, run POWHEG, assemble + deliver gridpack |
+| `submit_smeft.sub` | HTCondor submit description (one job per point; shared by both drivers) |
+| `run_smeft_gridpack.sh` | worker job: stage tarball, run POWHEG, assemble + deliver gridpack (card-agnostic) |
 | `make_process_tarball.sh` | (re)build `ggHH_SMEFT_run.tar.gz` from a compiled POWHEG-BOX build |
 | `makeSMEFTCards.py` | one POWHEG card per point (conditional `includesubleading`) |
-| `powheg-2.input` | base POWHEG template (`usesmeft 1`, `SMEFTtruncation 1`) |
+| `powheg-2.input` | base SMEFT template (`usesmeft 1`, `SMEFTtruncation 1`) |
+| `submit_heft.sh` | **HEFT basis-only** driver (BM1…BM23, 14 TeV, native HEFT) |
+| `makeHEFTCards.py` | one HEFT card per benchmark from `gghh_heft_basis.csv` (+`--extra` CSVs) |
+| `powheg-2-heft.input` | base HEFT template (`usesmeft 0`, five anomalous couplings) |
+| `validation_points.csv` | 4 single-coupling validation points appended to the basis by default |
