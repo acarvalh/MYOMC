@@ -91,7 +91,7 @@ if [ "$DRYRUN" != "1" ]; then
   fi
 fi
 
-submitted=0; failed=0; namefail=0; otherfail=0
+submitted=0; failed=0; namefail=0; otherfail=0; already=0
 FAILLOG=$HERE/crab_submit_failures.tsv
 : > "$FAILLOG"
 
@@ -123,6 +123,18 @@ for frag in "$FRAGDIR"/*.py; do
     fi
     req=$(printf 'ggHH_SMEFT_%s_%05d' "${GRID:-9d}" "$ix")
   fi
+
+  # IDEMPOTENT RE-RUNS: crab keeps a per-task work area 'crab_nanogen/crab_<req>'.
+  # If it already exists this point was already submitted, and `crab submit` would
+  # abort with "Working area already exists / Please change the requestName". Skip it
+  # up front (also saves the ~minute of cmsDriver below) so re-running a range only
+  # submits the genuinely-new points. Use --force-resubmit / delete the work area to
+  # re-send one on purpose.
+  if [ "$DRYRUN" != "1" ] && [ -d "$HERE/crab_nanogen/crab_${req}" ]; then
+    echo ">> skip $point -- already submitted (crab_nanogen/crab_${req} exists)"
+    already=$((already + 1)); continue
+  fi
+
   # Thread count is baked into the cfg NAME so a cfg built with a different
   # --nThreads can never be silently reused (CRAB rejects a task whose
   # numCores != the PSet's numberOfThreads). Change NTHREADS => new cfg, no stale
@@ -186,10 +198,18 @@ PY
       echo "$out" | grep -iE 'Success|Task name|project dir' | head -3 || true
       submitted=$((submitted + 1))
     else
-      # Classify the failure. The 99-char Data.outputPrimaryDataset / 100-char requestName
-      # limit is the known 9d name-length problem -- count it separately so a run answers
-      # "how many points are too long?" at a glance. Everything else is 'other'.
-      if echo "$out" | grep -qiE 'outputPrimaryDataset|requestName|99 char|100 char|should not have more than'; then
+      # Classify the failure. Match on the ACTUAL wording, not a stray field name:
+      # CRAB echoes "Please change the requestName" for an already-submitted task and
+      # prints the outputPrimaryDataset line in benign context, so grepping bare
+      # 'requestName'/'outputPrimaryDataset' mislabels those as length errors (it did:
+      # a re-run of an already-done range reported "N too long"). The real length error
+      # is literally "should not have more than 99 characters".
+      if echo "$out" | grep -qiE 'already exists|change the requestName'; then
+        # Not a failure -- the task is already submitted (belt-and-braces; the pre-check
+        # above normally catches this before we ever call crab submit).
+        echo ">> skip $point -- already submitted (crab reports work area exists)"
+        already=$((already + 1)); continue
+      elif echo "$out" | grep -qiE 'should not have more than|not have more than 99|match the regular expression'; then
         reason='name too long (>99/100-char CRAB limit)'; namefail=$((namefail + 1))
       else
         reason='crab submit error'; otherfail=$((otherfail + 1))
@@ -225,6 +245,9 @@ else
   echo ">> CRAB: submitted $submitted task(s). Monitor with:"
   echo "     crab status -d crab_nanogen/crab_<requestName>"
   echo "   Resubmit only failed jobs of a task with: crab resubmit -d crab_nanogen/crab_<requestName>"
+  if [ "$already" -gt 0 ]; then
+    echo ">> skipped $already point(s) already submitted (work area exists) -- not re-sent."
+  fi
   if [ "$failed" -gt 0 ]; then
     echo
     echo "!! SKIPPED $failed point(s) that failed to submit (run continued past them):"
