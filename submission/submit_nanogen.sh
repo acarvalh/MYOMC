@@ -87,7 +87,9 @@ MEM=8000                                     # request_memory (MB); ~4 pwhg_main
 FLAVOUR=testmatch                            # 72h queue (condor backend)
 BACKEND=condor                               # condor | crab
 STORAGE_SITE=T3_CH_CERNBOX                   # CRAB Site.storageSite (T3_CH_CERNBOX = /eos/user)
-OUTPUT_LFN=/store/user/acarvalh/smeft_nanogen # CRAB Data.outLFNDirBase
+OUTPUT_LFN=                                   # CRAB Data.outLFNDirBase; empty => derived
+                                              # from the grid's nanogen dir (see below) so
+                                              # CRAB stages where report_batches looks.
 DRYRUN=0
 REPORT=0                                     # --report: only print status, no submit
 ONLY_MISSING=0                               # --only-missing: submit only not-done jobs
@@ -149,11 +151,33 @@ case "$GRID" in
   4d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_4D_leadingOnly_updated_PDF.json; GRID_GPDIR=$GPDIR_4D; GRID_NANO=$NANO_4D;;
   5d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg.json;        GRID_GPDIR=$GPDIR_5D; GRID_NANO=$NANO_5D;;
   9d) GRID_JSON=$HERE/FINALgrid_for_SMEFT_9D_extension_only.json;          GRID_GPDIR=$GPDIR_9D; GRID_NANO=$NANO_9D;;
-  *)  echo "--grid must be 4d, 5d or 9d" >&2; exit 1;;
+  # trunc = the SMEFT truncation-study set (5 LHCHWG-2026-006 BMs x {lin,quad}, built by
+  # gridpack/submit_truncation.sh). NOT coefficient-encoded: fragments are named after the
+  # gridpack tag by make_trunc_fragments.py (branch below), NOT make_fragments.py, so
+  # GRID_JSON stays empty. 13.6 TeV only (the paper energy); dirs carry the _13p6TeV tag
+  # that submit_truncation.sh used, so they're hardcoded here (NOT $ECM_TAG-derived).
+  trunc)
+    case "$ECM" in 13.6) ;; *) echo "--grid trunc is 13.6 TeV only (the paper energy); got --ecm $ECM" >&2; exit 1;; esac
+    GRID_JSON=""
+    GRID_GPDIR=root://eosuser.cern.ch//eos/user/a/acarvalh/gghh_smeft_truncation_gridpacks_13p6TeV
+    GRID_NANO=root://eosuser.cern.ch//eos/user/a/acarvalh/gghh_smeft_truncation_nanogen_13p6TeV;;
+  *)  echo "--grid must be 4d, 5d, 9d or trunc" >&2; exit 1;;
 esac
 [ -n "$POINTS" ]       || POINTS=$GRID_JSON
 [ -n "$GRIDPACK_DIR" ] || GRIDPACK_DIR=$GRID_GPDIR
 [ -n "$OUTPUT_DIR" ]   || OUTPUT_DIR=$GRID_NANO
+# CRAB outLFNDirBase: derive it from the resolved nanogen dir so CRAB stages exactly
+# where report_batches (--backend crab) looks. CERNBOX maps /store/user/acarvalh/X
+# <-> /eos/user/a/acarvalh/X, so strip the eosuser prefix and re-root under /store.
+# Without this, CRAB fell back to a flat /store/user/acarvalh/smeft_nanogen for every
+# grid/energy, and 9d/13-14 TeV outputs never showed up under smeft_nanogen_9d/.
+if [ -z "$OUTPUT_LFN" ]; then
+  case "$OUTPUT_DIR" in
+    *//eos/user/a/acarvalh/*) OUTPUT_LFN=/store/user/acarvalh/${OUTPUT_DIR#*//eos/user/a/acarvalh/};;
+    /eos/user/a/acarvalh/*)   OUTPUT_LFN=/store/user/acarvalh/${OUTPUT_DIR#/eos/user/a/acarvalh/};;
+    *) echo "ERROR: cannot derive OUTPUT_LFN from OUTPUT_DIR=$OUTPUT_DIR; pass --output-lfn" >&2; exit 1;;
+  esac
+fi
 # 13/14 TeV run the REDUCED grid (2D scan + axis in full, Gaussian block halved). The
 # reduced JSON must match what submit_smeft built and what report_batches counts, so
 # swap it in whenever --points was not given explicitly, for the 5d/9d grids.
@@ -163,8 +187,14 @@ if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ];
            [ -f "$HALF" ] && POINTS=$HALF;;
   esac
 fi
-[ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
-echo ">> grid=$GRID  ecm=${ECM}TeV (comEnergy=$COMENERGY GeV)  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
+# trunc uses a CSV-driven fragment generator (make_trunc_fragments.py), not a points JSON,
+# so skip the JSON existence check for it.
+if [ "$GRID" != "trunc" ]; then
+  [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
+  echo ">> grid=$GRID  ecm=${ECM}TeV (comEnergy=$COMENERGY GeV)  points=$(basename "$POINTS")  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
+else
+  echo ">> grid=trunc  ecm=${ECM}TeV (comEnergy=$COMENERGY GeV)  points=smeft_truncation_bm.csv (x2 lin/quad)  gridpacks=$GRIDPACK_DIR  nanogen=$OUTPUT_DIR"
+fi
 
 # --test: quick single-job smoke test on the FIRST gridpack-ready point in the
 # selection. Force 100 events in ONE job, and (below) queue only that one point.
@@ -241,7 +271,21 @@ GP_BAKE=()
 HARD_BAKE=()
 [ "$HARD_ONLY" = "1" ] && { HARD_BAKE=(--hard-only); echo ">> hard-only: Pythia shower/hadronization OFF (hard scattering only)"; }
 rm -f "$FRAGDIR"/*.py "$FRAGDIR"/manifest.json
-if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
+# trunc: CSV-driven tag-named fragments (make_trunc_fragments.py). Its --start/--end/--nmax
+# slice the canonical 10-tag list the same 1-based way make_fragments does; NCARDS default 3
+# would only build 3 of 10, so for trunc treat the "no range" case as ALL (nmax 0).
+if [ "$GRID" = "trunc" ]; then
+  FRAG_GEN=make_trunc_fragments.py
+  if [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
+    echo ">> generating truncation fragments (tags $START..$END) into $FRAGDIR"
+    python3 "$HERE/make_trunc_fragments.py" --outdir "$FRAGDIR" --start "$START" --end "$END" \
+            --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
+  else
+    echo ">> generating truncation fragments (all 10 lin/quad tags) into $FRAGDIR"
+    python3 "$HERE/make_trunc_fragments.py" --outdir "$FRAGDIR" --nmax 0 \
+            --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
+  fi
+elif [ "$START" -gt 0 ] || [ "$END" -gt 0 ]; then
   echo ">> generating fragments (points $START..$END) into $FRAGDIR"
   python3 "$HERE/make_fragments.py" --points "$POINTS" --outdir "$FRAGDIR" --start "$START" --end "$END" \
           --nevents "$NEVENTS" --comenergy "$COMENERGY" "${GP_BAKE[@]}" "${HARD_BAKE[@]}"
@@ -260,11 +304,22 @@ if [ "$BACKEND" = "crab" ]; then
   fi
   NPOINTS=$(ls -1 "$FRAGDIR"/*.py | wc -l)
   echo ">> CRAB backend: $NPOINTS task(s), $TOTAL_EVENTS evts/point split into jobs of $NEVENTS"
+  [ "$DRYRUN" = "1" ] && echo ">> NOTE: --dry-run only BUILDS the crab configs; it does NOT 'crab submit'. Re-run without --dry-run to actually send the jobs."
   FRAGDIR="$FRAGDIR" OUTPUT_LFN="$OUTPUT_LFN" STORAGE_SITE="$STORAGE_SITE" \
   TOTAL_EVENTS="$TOTAL_EVENTS" NEVENTS="$NEVENTS" NTHREADS="$NTHREADS" MEM="$MEM" \
-  RUN_SH="$RUN_SH" DRYRUN="$DRYRUN" \
+  RUN_SH="$RUN_SH" DRYRUN="$DRYRUN" GRID="$GRID" \
     bash "$HERE/submit_crab.sh"
-  exit $?
+  rc=$?
+  # The CRAB work area (config.General.workArea) is created in submit_crab.sh's
+  # working dir, i.e. $HERE/crab_nanogen, with one crab_<requestName> per task.
+  if [ "$rc" = "0" ] && [ "$DRYRUN" != "1" ]; then
+    echo
+    echo ">> CRAB work area:  $HERE/crab_nanogen/   (one crab_<requestName> per point)"
+    echo ">> monitor a task:  crab status -d $HERE/crab_nanogen/crab_<requestName>"
+    echo ">> monitor all:     for d in $HERE/crab_nanogen/crab_*; do crab status -d \"\$d\"; done"
+    echo ">> resubmit failed: crab resubmit -d $HERE/crab_nanogen/crab_<requestName>"
+  fi
+  exit $rc
 fi
 
 # ----- HTCondor backend (default): one job per (point, jobindex) -----

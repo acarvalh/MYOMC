@@ -1,0 +1,24 @@
+# Five SMEFT invariant-mass benchmark points for the truncation study, from
+# LHCHWG-2026-006 ("Higgs boson pair production in SMEFT: shape and truncation
+# studies"), Table 3 (quadratic-truncation benchmarks). Columns are the report's
+# Wilson coefficients mapped to THIS setup's card parameter names (see powheg-2.input):
+#
+#   report            card        note
+#   ------            ----        ----
+#   C_H,kin           CHbox       with CHD=0, C_H,kin = C_Hbox - C_HD/4 = CHbox (Eq.4 field redef)
+#   C_H               CH
+#   C_tH              CuH         modified top Yukawa operator
+#   C_HG              CHG
+#   C_tG              CtG
+#   C_Qt^(1)          CQt
+#   C_Qt^(8)          CQt8
+#
+# All five benchmarks use only CHbox/CH/CuH; the rest are 0 (kept as columns so the
+# set is easy to extend). mu_hh (Table 3) is listed for reference only, not used.
+# Each point is built TWICE: linear (SMEFTtruncation 0) and full/quadratic (=1).
+point,CHbox,CH,CuH,CHG,CtG,CQt,CQt8,mu_hh
+BM1,0,3,0,0,0,0,0,2.9
+BM2,-2,-2,4,0,0,0,0,2.1
+BM3,0,-3,0,0,0,0,0,0.4
+BM4,0,-6,0,0,0,0,0,1.2
+BM5,-2,-3,0.5,0,0,0,0,0.6

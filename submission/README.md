@@ -326,6 +326,18 @@ Pick with `--backend condor|crab`. Same fragments, same point selection, same
 ./submit_nanogen.sh --start 4 --end 500 --backend crab --dry-run   # build cfgs/configs only
 ```
 
+> ⚠️ **`--dry-run` does NOT submit.** With CRAB, `--dry-run` only builds the
+> `cfgs/` and `crabConfigs/` files and stops **before** `crab submit` — the samples
+> will never be produced until you submit. To actually send the jobs, re-run the
+> **same command without `--dry-run`** (or submit the built configs directly):
+> ```bash
+> voms-proxy-init --rfc --voms cms -valid 192:00           # valid grid proxy first
+> for c in crabConfigs/crabConfig_*.py; do crab submit -c "$c"; done
+> crab status -d crab_nanogen/crab_<requestName>           # then monitor
+> ```
+> `submit_crab.sh` now prints this reminder at the end of a dry run and refuses a
+> real submit with no valid proxy.
+
 | | **condor** | **crab** |
 |---|---|---|
 | unit of work | one job per `(point, jobidx)` | one CRAB **task** per point |

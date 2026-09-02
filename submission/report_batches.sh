@@ -167,6 +167,8 @@ list_dir() {
 # NANODIR/<req>/<outputDatasetTag>/<timestamp>/000X/<file>_<jobid>.root, and <req> =
 # "<point without powheg_ prefix>"[:100] (see submit_crab.sh). Walk recursively, keep
 # only .root files, strip the NANODIR base, take the first path component (<req>).
+# <req> = ggHH_SMEFT_9d_NNNNN for 9d (index name), else the short coupling name; see
+# req_for() below and submit_crab.sh -- both must agree or the per-point count breaks.
 list_nano_crab() {
   local url=$1 base paths
   case $url in
@@ -272,16 +274,24 @@ N     = len(pts)
 #   condor: nano_f holds basenames -> membership of NANOGEN_<point>_<j>.root.
 #   crab:   nano_f holds one CRAB primaryDataset <req> per delivered .root file, so we
 #           COUNT files per <req> and treat the first `count` job-slots (1..count) as done.
-#           <req> = "<point without powheg_ prefix>"[:100] (matches submit_crab.sh).
+#           <req> via req_for(i,name): 9d index name, else short coupling name.
 from collections import Counter
 backend = os.environ.get("BACKEND", "condor")
+grid_env = os.environ.get("GRID", "5d")
 crab_count = Counter(l.strip() for l in open(nano_f) if l.strip()) if backend == "crab" else Counter()
-def req_of(name):
+def req_for(i, name):
+    # CRAB primaryDataset == EOS <req> dir. MUST match submit_crab.sh exactly (LENGTH-
+    # CONDITIONAL): keep the coupling name when it fits CRAB's 99-char limit; only the
+    # fully-mixed 9d points that overflow fall back to the index name ggHH_SMEFT_<grid>_NNNNN
+    # (i is 1-based, matching submit_crab's manifest index+1). This keeps every point already
+    # staged under a short coupling name addressable -- no EOS renames needed.
     r = name[len("powheg_"):] if name.startswith("powheg_") else name
-    return r[:100]
-def delivered(name, j):
+    if len(r) > 99:
+        return f"ggHH_SMEFT_{grid_env}_{i:05d}"
+    return r
+def delivered(i, name, j):
     if backend == "crab":
-        return j <= crab_count.get(req_of(name), 0)
+        return j <= crab_count.get(req_for(i, name), 0)
     return f"NANOGEN_{name}_{j}.root" in nano
 
 # Points other submitters (--others) are building, pool-wide. A point here is treated
@@ -468,7 +478,7 @@ for lo,hi in BATCHES:
                 if name in logs:  gap_log  += 1
         c = 0
         for j in range(1, njobs+1):
-            if delivered(name, j):
+            if delivered(i, name, j):
                 c += 1
                 continue
             # file not there yet: explain it the same way as for gridpacks
@@ -562,7 +572,7 @@ if os.environ.get("EMIT_GAPS") == "1":
                 continue
             needs = False
             for j in range(1, njobs+1):
-                if delivered(name, j):                  # already delivered
+                if delivered(i, name, j):               # already delivered
                     continue
                 nst = nqueue.get((name, str(j)), set())
                 if 2 in nst or 1 in nst:                # my live (running/idle) job: leave it
@@ -589,7 +599,7 @@ if os.environ.get("EMIT_GAPS") == "1":
         workarea = os.environ.get("CRAB_WORKAREA", "")
         resub, missing = [], []
         for i in ngaps:
-            req = req_of(point_name(pts[i-1]))
+            req = req_for(i, point_name(pts[i-1]))
             projdir = os.path.join(workarea, "crab_" + req)
             (resub if os.path.isdir(projdir) else missing).append((i, projdir))
         with open(os.environ["CRAB_RESUB_OUT"], "w") as fh:
