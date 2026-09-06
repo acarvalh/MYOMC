@@ -105,7 +105,11 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
     manifest = []
     for j, point in enumerate(points):
-        i = offset + j  # absolute index into the original JSON
+        # Absolute index into the FULL grid. Reduced grids (e.g. the 100 TeV
+        # half/rest split) carry the original global index in an "index" field so
+        # their index-fallback names (ggHH_SMEFT_<grid>_NNNNN) stay unique across
+        # subsets and trace back to the parent grid; positional otherwise.
+        i = int(point["index"]) if "index" in point else offset + j
         card = base  # template already sets usesmeft 1 + SMEFTtruncation 1
         # The SUBLEADING operators (CtG + the four four-top operators) only enter
         # the ME when subleading operators are enabled. includesubleading 1 = loop

@@ -187,6 +187,23 @@ if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ];
            [ -f "$HALF" ] && POINTS=$HALF;;
   esac
 fi
+# 100 TeV uses the FCC-hh-specific grids, reduced to the "half" first pass (SM+axes in
+# full, every-other 2D-plane & fully-mixed point). MUST match what submit_smeft built and
+# what report_batches counts. Points carry their original global index (make_fragments
+# honors it) so the half set and the deferred _rest set never share a seed window or an
+# index-fallback name. Run the remainder with --points <..._100TeV_rest.json>.
+if [ -z "$POINTS_CLI" ] && [ "$ECM_TAG" = _100TeV ]; then
+  case "$GRID" in
+    5d) F100=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg_100TeV.json;;
+    9d) F100=$HERE/FINALgrid_for_SMEFT_9D_extension_only_100TeV.json;;
+    *)  F100="";;
+  esac
+  if [ -n "$F100" ]; then
+    [ -f "$F100" ] || { echo "ERROR: 100TeV points JSON not found: $F100" >&2; exit 1; }
+    HALF100=${F100%.json}_half.json
+    if [ -f "$HALF100" ]; then POINTS=$HALF100; else POINTS=$F100; fi
+  fi
+fi
 # trunc uses a CSV-driven fragment generator (make_trunc_fragments.py), not a points JSON,
 # so skip the JSON existence check for it.
 if [ "$GRID" != "trunc" ]; then

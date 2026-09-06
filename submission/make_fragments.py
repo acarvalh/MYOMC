@@ -141,7 +141,13 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
     manifest = []
     for j, point in enumerate(points):
-        i = offset + j  # absolute index into the original JSON
+        # Absolute index into the FULL grid. It drives the per-point seed window
+        # (submit_nanogen.sh) and the 9d index-fallback CRAB name, so reduced grids
+        # (e.g. the 100 TeV half/rest split) MUST carry their original global index
+        # in an "index" field: otherwise half and rest re-index from 0, overlap seed
+        # windows (duplicate events) and collide on ggHH_SMEFT_<grid>_NNNNN. Positional
+        # when no "index" field is present (the full/legacy grids).
+        i = int(point["index"]) if "index" in point else offset + j
         name = point_name(point)
         gp_file = name + "_gridpack.tar.gz"
         if args.gridpack_base:

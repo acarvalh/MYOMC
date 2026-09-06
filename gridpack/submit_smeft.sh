@@ -146,6 +146,27 @@ if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ];
            [ -f "$HALF" ] && POINTS=$HALF;;
   esac
 fi
+# 100 TeV runs a DEDICATED, FCC-hh-specific point set (tighter Wilson-coefficient
+# ranges than 13/14 TeV: e.g. CH +-10 not +-50, CHbox +-0.5 not +-8). These live in
+# *_100TeV.json siblings. Same rule as halfgauss: only when --points was NOT given,
+# for 5d/9d. 5d uses the "leading_plus_ctg" naming, 9d "extension_only".
+if [ -z "$POINTS_CLI" ] && [ "$ECM_TAG" = _100TeV ]; then
+  case "$GRID" in
+    5d) F100=$SUBDIR/FINALgrid_for_SMEFT_5D_leading_plus_ctg_100TeV.json;;
+    9d) F100=$SUBDIR/FINALgrid_for_SMEFT_9D_extension_only_100TeV.json;;
+    *)  F100="";;
+  esac
+  if [ -n "$F100" ]; then
+    [ -f "$F100" ] || { echo "ERROR: 100TeV points JSON not found: $F100" >&2; exit 1; }
+    # Reduced first pass: keep SM + 1D axes in full, every-other 2D-plane point,
+    # every-other fully-mixed point (~half the grid). Points carry their original
+    # global index so this set and the deferred remainder never collide. Run the
+    # REMAINDER later with:  --points <..._100TeV_rest.json>. The full grid is
+    # <..._100TeV.json>; provenance in <..._100TeV_split.csv>. --points overrides all.
+    HALF100=${F100%.json}_half.json
+    if [ -f "$HALF100" ]; then POINTS=$HALF100; else POINTS=$F100; fi
+  fi
+fi
 [ -f "$POINTS" ] || { echo "ERROR: points JSON not found: $POINTS" >&2; exit 1; }
 echo ">> grid=$GRID  ecm=${ECM}TeV  pdf=${PDF:-90400(template)}  points=$(basename "$POINTS")  cards=$CARDDIR  gridpacks=$OUTPUT_DIR"
 

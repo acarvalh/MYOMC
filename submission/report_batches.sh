@@ -144,6 +144,21 @@ if [ -z "$POINTS_CLI" ] && { [ "$ECM_TAG" = _13TeV ] || [ "$ECM_TAG" = _14TeV ];
            [ -f "$HALF" ] && POINTS=$HALF;;
   esac
 fi
+# 100 TeV reports against the reduced "half" first pass that submit_smeft/submit_nanogen
+# actually build (SM+axes full, every-other 2D-plane & fully-mixed); otherwise the deferred
+# _rest points would be flagged as perpetually-missing gridpacks. Report the remainder with
+# --points <..._100TeV_rest.json>. Skipped if --points was given.
+if [ -z "$POINTS_CLI" ] && [ "$ECM_TAG" = _100TeV ]; then
+  case "$GRID" in
+    5d) F100=$HERE/FINALgrid_for_SMEFT_5D_leading_plus_ctg_100TeV.json;;
+    9d) F100=$HERE/FINALgrid_for_SMEFT_9D_extension_only_100TeV.json;;
+    *)  F100="";;
+  esac
+  if [ -n "$F100" ]; then
+    HALF100=${F100%.json}_half.json
+    if [ -f "$HALF100" ]; then POINTS=$HALF100; elif [ -f "$F100" ]; then POINTS=$F100; fi
+  fi
+fi
 GPDIR=${GPDIR:-$GRID_GPDIR}
 NANODIR=${NANODIR:-$GRID_NANO}
 export GRID ECM ECM_TAG
